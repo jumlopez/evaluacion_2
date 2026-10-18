@@ -7,7 +7,6 @@ import com.rinconsur.conteo.RinconApp
 import com.rinconsur.conteo.model.Accesos
 import com.rinconsur.conteo.model.Genero
 import com.rinconsur.conteo.model.Movimiento
-import com.rinconsur.conteo.model.RangosEtarios
 import com.rinconsur.conteo.model.RegistroErrores
 import com.rinconsur.conteo.model.RegistroUiState
 import com.rinconsur.conteo.model.construirRegistros
@@ -19,8 +18,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * Captura rápida: cada toque en un género suma una persona y se guarda de inmediato
- * en Room/SQLite. No hay paso de confirmación para no frenar al operador.
+ * Captura rápida: el operador toca el género, elige la característica etaria en el
+ * primer popup y, si es una salida, responde en el segundo si compró. La app suma
+ * una persona a esa combinación. El guardado va directo a Room/SQLite, sin paso de
+ * confirmación para no frenar al operador.
  */
 class RegistroViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -38,26 +39,19 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun onMovimientoChange(movimiento: Movimiento) = _estado.update {
-        it.copy(
-            movimiento = movimiento,
-            compro = if (movimiento == Movimiento.SALIDA) null else it.compro
-        )
+        it.conMovimiento(movimiento)
     }
 
-    fun onRangoChange(rango: String) = _estado.update {
-        it.copy(rangoEtario = rango, errores = it.errores.copy(rango = null))
-    }
+    /** Un recorrido por los popups (característica y compra) = una persona observada. */
+    fun agregarPersona(genero: Genero, rango: String, compro: Boolean? = null) =
+        _estado.update {
+            it.conCantidad(genero, rango, it.cantidad(genero, rango, compro) + 1, compro)
+        }
 
-    fun onComproChange(compro: Boolean?) = _estado.update { it.copy(compro = compro) }
-
-    /** Un toque = una persona observada en las cámaras. */
-    fun agregarPersona(genero: Genero) = _estado.update {
-        it.conCantidad(genero, it.cantidad(genero) + 1)
-    }
-
-    fun quitarPersona(genero: Genero) = _estado.update {
-        it.conCantidad(genero, it.cantidad(genero) - 1)
-    }
+    fun quitarPersona(genero: Genero, rango: String, compro: Boolean? = null) =
+        _estado.update {
+            it.conCantidad(genero, rango, it.cantidad(genero, rango, compro) - 1, compro)
+        }
 
     fun agregarNino() = _estado.update {
         it.copy(
@@ -73,10 +67,8 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
     /** Limpia el grupo en captura sin cambiar el acceso ni el movimiento. */
     fun reiniciarConteo() = _estado.update {
         it.copy(
-            conteoPorGenero = Genero.entries.associateWith { 0 },
+            conteo = emptyMap(),
             ninosAcompanantes = 0,
-            rangoEtario = RangosEtarios.NO_DECLARA,
-            compro = null,
             errores = RegistroErrores()
         )
     }
@@ -97,10 +89,8 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
                 Accesos.etiqueta(actual.accesoId)
             _estado.update {
                 it.copy(
-                    conteoPorGenero = Genero.entries.associateWith { 0 },
+                    conteo = emptyMap(),
                     ninosAcompanantes = 0,
-                    rangoEtario = RangosEtarios.NO_DECLARA,
-                    compro = null,
                     errores = RegistroErrores()
                 )
             }

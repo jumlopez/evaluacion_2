@@ -113,7 +113,7 @@ private fun Encabezado(resumen: ResumenGeneral, periodo: Periodo, onPeriodo: (Pe
                     DatoNumerico("Aforo neto", resumen.aforoNeto)
                 }
                 Text(
-                    "${(resumen.pctCompra * 100).roundToInt()}% de conversión · " +
+                    "${(resumen.pctCompra * 100).roundToInt()}% de las salidas compró · " +
                         "${resumen.totalNinos} niños acompañantes",
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,

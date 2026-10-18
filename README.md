@@ -15,13 +15,16 @@ lo que la app cumple dos roles complementarios:
 
 1. **Captura rápida (operador de cámaras)**: una persona frente a las cámaras de seguridad observa
    a los clientes y registra, con botones e iconos, cuántas personas entran o salen por acceso,
-   su género, el rango etario y si vienen con niños. Un toque por persona, sin formularios largos.
+   su género, la característica etaria y si vienen con niños. En las salidas, apenas se elige la
+   característica etaria, un segundo popup pregunta si la persona compró. Dos toques por persona,
+   sin formularios largos.
 2. **Conteos de pórticos**: al cierre de cada bloque horario se digitan las lecturas de entradas y
    salidas que entregaron los pórticos de cada acceso.
 
 El **Dashboard** cruza ambas fuentes: muestra el conteo del pórtico, lo registrado por el operador,
 la diferencia entre ambos y el **porcentaje de cobertura** (qué proporción del flujo real quedó
-caracterizada). También calcula aforo neto, conversión de compra, distribución por género/edad y
+caracterizada). También calcula aforo neto, conversión de compra (sobre las salidas con dato),
+distribución por género/edad y
 niños acompañantes.
 
 > **Privacidad**: el operador solo registra **conteos agregados** (cuántos hombres, mujeres, otros,
@@ -51,13 +54,13 @@ operador digita. Tampoco hay backend ni sincronización remota: **Room/SQLite es
 | `fechaHora` | Momento del registro |
 | `movimiento` | `ENTRADA` o `SALIDA` |
 | `genero` | `FEMENINO`, `MASCULINO`, `OTRO`, `NO_DECLARA` |
-| `rangoEtario` | `<18`, `18-29`, `30-44`, `45-59`, `60+`, `No declara` |
+| `rangoEtario` | `Joven`, `Adulto`, `Adulto mayor` (las etiquetas antiguas se conservan si existen en la base) |
 | `cantidad` | Personas del grupo con ese movimiento/género/rango |
 | `ninosAcompanantes` | Niños adicionales que acompañan al grupo (0–20) |
-| `compro` | Solo en entradas: `true`/`false`; en salidas queda `null` |
+| `compro` | Solo en salidas: `true`/`false`; en entradas queda `null` (la compra se conoce al salir) |
 
-Un solo guardado genera **una fila por género** con cantidad mayor que cero; los niños acompañantes
-se descuentan una sola vez (en la primera fila) para no duplicar el conteo.
+Un solo guardado genera **una fila por combinación género/característica/compra** con cantidad mayor
+que cero; los niños acompañantes se descuentan una sola vez (en la primera fila) para no duplicar el conteo.
 
 ### `conteos_portico`
 
@@ -88,10 +91,13 @@ sus registros al actualizar la app.
    Incluye el panel **Cruce con pórticos** (pórtico vs. registrado, diferencia y cobertura) y, con el
    *Modo análisis* activo o en pantallas expandidas, el perfil por género/edad de las entradas.
 2. **Registro rápido**: se elige acceso (chips 1–4 con su piso) y movimiento (Entrada / Salida).
-   Luego se toca la tarjeta del género para sumar personas (**+1** por toque, con −/+ para corregir),
-   el botón **+1** de la tarjeta de niños acompañantes y, en las entradas, si compró (Sí / No / Sin
-   dato). Un botón **Guardar N** confirma cuántas personas se registraron y limpia los contadores
-   manteniendo el acceso y el movimiento para seguir capturando.
+   Luego se toca la tarjeta del género (**Femenino** o **Masculino**) y se abre un **popup animado**
+   donde se elige la característica: **Joven**, **Adulto** o **Adulto mayor**. Si el movimiento es
+   **Salida**, se encadena un **segundo popup animado** con la pregunta **¿Compró?**
+   (**Sí, compró** / **No compró** / **Sin dato**); en las entradas ese popup no aparece nunca.
+   El detalle del conteo queda debajo con −/+ para corregir, junto al botón **+1** de la tarjeta de
+   niños acompañantes. Un botón **Guardar N** confirma cuántas personas se registraron y limpia los
+   contadores manteniendo el acceso y el movimiento para seguir capturando.
 3. **Pórticos**: por cada acceso se digitan las entradas y salidas del día y se guardan con un solo
    botón; dejar ambos campos vacíos elimina la lectura del día.
 4. **Modo análisis**: interruptor persistente (DataStore) con animaciones.

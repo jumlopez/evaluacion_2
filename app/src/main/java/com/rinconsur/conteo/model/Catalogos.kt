@@ -14,12 +14,19 @@ enum class Genero(val etiqueta: String) {
     NO_DECLARA("No declara")
 }
 
-/** Rangos etarios usados para segmentar el flujo. */
-object RangosEtarios {
-    /** Valor por defecto cuando el operador no alcanza a estimar la edad. */
-    const val NO_DECLARA = "No declara"
+/** Géneros que el operador puede contar en la captura rápida. */
+val generosCapturables = listOf(Genero.FEMENINO, Genero.MASCULINO)
 
-    val opciones = listOf("<18", "18-29", "30-44", "45-59", "60+", NO_DECLARA)
+/**
+ * Características etarias que el operador elige al contar cada persona.
+ * Se mantienen los valores antiguos solo como datos históricos en la base.
+ */
+object RangosEtarios {
+    const val JOVEN = "Joven"
+    const val ADULTO = "Adulto"
+    const val ADULTO_MAYOR = "Adulto mayor"
+
+    val opciones = listOf(JOVEN, ADULTO, ADULTO_MAYOR)
 }
 
 data class Acceso(val id: Int, val piso: Int, val nombre: String)

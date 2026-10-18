@@ -45,7 +45,7 @@ fun TarjetaAcceso(resumen: ResumenAcceso, modifier: Modifier = Modifier) {
             }
             LinearProgressIndicator(progress = { progreso }, modifier = Modifier.fillMaxWidth())
             Text(
-                "${(resumen.pctCompra * 100).roundToInt()}% de las entradas compró · " +
+                "${(resumen.pctCompra * 100).roundToInt()}% de las salidas compró · " +
                     "${resumen.ninosEntradas} niños acompañantes",
                 style = MaterialTheme.typography.bodySmall
             )
