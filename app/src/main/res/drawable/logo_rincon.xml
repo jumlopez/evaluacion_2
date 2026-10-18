@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Fachada simple de tienda -->
+    <path
+        android:fillColor="#00695C"
+        android:pathData="M6,18 L10,6 L38,6 L42,18 Z" />
+    <path
+        android:fillColor="#4DB6AC"
+        android:pathData="M8,20 L40,20 L40,42 L8,42 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,28 L28,28 L28,42 L20,42 Z" />
+</vector>
