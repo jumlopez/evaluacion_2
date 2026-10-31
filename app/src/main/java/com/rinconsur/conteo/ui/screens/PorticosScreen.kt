@@ -78,15 +78,14 @@ fun PorticosScreen(
                 style = MaterialTheme.typography.bodySmall
             )
 
-            Accesos.lista.forEach { acceso ->
-                val fila = estado.fila(acceso.id)
+            estado.filas.forEach { fila ->
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(Accesos.etiqueta(acceso.id), style = MaterialTheme.typography.titleSmall)
+                        Text(Accesos.etiqueta(fila.accesoId), style = MaterialTheme.typography.titleSmall)
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             OutlinedTextField(
                                 value = fila.entradas,
-                                onValueChange = { viewModel.onEntradasChange(acceso.id, it) },
+                                onValueChange = { viewModel.onEntradasChange(fila.accesoId, it) },
                                 label = { Text("Entradas") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 singleLine = true,
@@ -94,7 +93,7 @@ fun PorticosScreen(
                             )
                             OutlinedTextField(
                                 value = fila.salidas,
-                                onValueChange = { viewModel.onSalidasChange(acceso.id, it) },
+                                onValueChange = { viewModel.onSalidasChange(fila.accesoId, it) },
                                 label = { Text("Salidas") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 singleLine = true,

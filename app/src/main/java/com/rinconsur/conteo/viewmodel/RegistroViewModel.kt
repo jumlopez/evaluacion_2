@@ -7,8 +7,6 @@ import com.rinconsur.conteo.RinconApp
 import com.rinconsur.conteo.model.Accesos
 import com.rinconsur.conteo.model.Genero
 import com.rinconsur.conteo.model.Movimiento
-import com.rinconsur.conteo.model.RangosEtarios
-import com.rinconsur.conteo.model.RegistroErrores
 import com.rinconsur.conteo.model.RegistroUiState
 import com.rinconsur.conteo.model.construirRegistros
 import com.rinconsur.conteo.model.validarRegistro
@@ -72,13 +70,7 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
 
     /** Limpia el grupo en captura sin cambiar el acceso ni el movimiento. */
     fun reiniciarConteo() = _estado.update {
-        it.copy(
-            conteoPorGenero = Genero.entries.associateWith { 0 },
-            ninosAcompanantes = 0,
-            rangoEtario = RangosEtarios.NO_DECLARA,
-            compro = null,
-            errores = RegistroErrores()
-        )
+        RegistroUiState(accesoId = it.accesoId, movimiento = it.movimiento)
     }
 
     fun guardar() {
@@ -95,19 +87,9 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
             repositorio.guardarTodos(registros)
             _mensaje.value = "Guardado: ${actual.totalConNinos} personas · " +
                 Accesos.etiqueta(actual.accesoId)
-            _estado.update {
-                it.copy(
-                    conteoPorGenero = Genero.entries.associateWith { 0 },
-                    ninosAcompanantes = 0,
-                    rangoEtario = RangosEtarios.NO_DECLARA,
-                    compro = null,
-                    errores = RegistroErrores()
-                )
-            }
+            reiniciarConteo()
         }
     }
 
-    fun consumirMensaje() {
-        _mensaje.value = null
-    }
+    fun consumirMensaje() { _mensaje.value = null }
 }

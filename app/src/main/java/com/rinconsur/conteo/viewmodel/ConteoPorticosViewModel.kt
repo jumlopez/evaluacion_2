@@ -17,17 +17,16 @@ data class FilaPorticoUi(
     val accesoId: Int,
     val entradas: String = "",
     val salidas: String = ""
-)
+) {
+    val vacia: Boolean get() = entradas.isBlank() && salidas.isBlank()
+}
 
 data class PorticosUiState(
     val filas: List<FilaPorticoUi> = Accesos.ids.map { FilaPorticoUi(it) },
     val cargando: Boolean = true,
     val error: String? = null,
     val guardadoOk: Boolean = false
-) {
-    fun fila(accesoId: Int): FilaPorticoUi =
-        filas.firstOrNull { it.accesoId == accesoId } ?: FilaPorticoUi(accesoId)
-}
+)
 
 /**
  * El operador transcribe las lecturas diarias de los pórticos de cada acceso para
@@ -37,23 +36,16 @@ class ConteoPorticosViewModel(application: Application) : AndroidViewModel(appli
 
     private val repositorio = (application as RinconApp).repositorio
     private val dia: Long = inicioDelDia(System.currentTimeMillis())
-    private var idsExistentes: Map<Int, Long> = emptyMap()
 
     private val _estado = MutableStateFlow(PorticosUiState())
     val estado: StateFlow<PorticosUiState> = _estado.asStateFlow()
 
     init {
         viewModelScope.launch {
-            val guardados = repositorio.porticosDelDia(dia)
-            idsExistentes = guardados.associate { it.accesoId to it.id }
+            val guardados = repositorio.porticosDelDia(dia).associateBy { it.accesoId }
             _estado.value = PorticosUiState(
                 filas = Accesos.ids.map { id ->
-                    val conteo = guardados.firstOrNull { it.accesoId == id }
-                    FilaPorticoUi(
-                        accesoId = id,
-                        entradas = conteo?.entradas?.toString() ?: "",
-                        salidas = conteo?.salidas?.toString() ?: ""
-                    )
+                    guardados[id]?.let { FilaPorticoUi(id, "${it.entradas}", "${it.salidas}") } ?: FilaPorticoUi(id)
                 },
                 cargando = false
             )
@@ -78,20 +70,19 @@ class ConteoPorticosViewModel(application: Application) : AndroidViewModel(appli
 
     fun guardar() {
         val actual = _estado.value
-        if (actual.filas.all { it.entradas.isBlank() && it.salidas.isBlank() }) {
+        if (actual.filas.all { it.vacia }) {
             _estado.update { it.copy(error = "Ingresa al menos un conteo de pórtico") }
             return
         }
 
+        // REPLACE sobre el índice único (accesoId, fechaMillis) actualiza la lectura del día.
         viewModelScope.launch {
             actual.filas.forEach { fila ->
-                val existente = idsExistentes[fila.accesoId]
-                if (fila.entradas.isBlank() && fila.salidas.isBlank()) {
-                    if (existente != null) repositorio.eliminarPortico(fila.accesoId, dia)
+                if (fila.vacia) {
+                    repositorio.eliminarPortico(fila.accesoId, dia)
                 } else {
                     repositorio.guardarPortico(
                         ConteoPortico(
-                            id = existente ?: 0,
                             accesoId = fila.accesoId,
                             fechaMillis = dia,
                             entradas = fila.entradas.toIntOrNull() ?: 0,
@@ -101,14 +92,11 @@ class ConteoPorticosViewModel(application: Application) : AndroidViewModel(appli
                     )
                 }
             }
-            idsExistentes = repositorio.porticosDelDia(dia).associate { it.accesoId to it.id }
             _estado.update { it.copy(guardadoOk = true) }
         }
     }
 
-    fun consumirGuardado() {
-        _estado.update { it.copy(guardadoOk = false) }
-    }
+    fun consumirGuardado() = _estado.update { it.copy(guardadoOk = false) }
 
     private fun soloDigitos(valor: String): String = valor.filter(Char::isDigit).take(6)
 }
