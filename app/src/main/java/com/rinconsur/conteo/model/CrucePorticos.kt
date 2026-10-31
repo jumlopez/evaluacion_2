@@ -1,5 +1,9 @@
 package com.rinconsur.conteo.model
 
+/** Proporción registrado/pórtico; null si el pórtico no marcó nada. */
+private fun cobertura(registrado: Int, portico: Int): Float? =
+    if (portico > 0) registrado.toFloat() / portico else null
+
 /** Comparación, por acceso, entre lo que marcó el pórtico y lo registrado en la app. */
 data class FilaCruce(
     val accesoId: Int,
@@ -10,61 +14,33 @@ data class FilaCruce(
 ) {
     val diferenciaEntradas: Int get() = porticoEntradas - registradoEntradas
     val diferenciaSalidas: Int get() = porticoSalidas - registradoSalidas
-
-    val coberturaEntradas: Float?
-        get() = if (porticoEntradas > 0) registradoEntradas.toFloat() / porticoEntradas else null
-
-    val coberturaSalidas: Float?
-        get() = if (porticoSalidas > 0) registradoSalidas.toFloat() / porticoSalidas else null
+    val coberturaEntradas: Float? get() = cobertura(registradoEntradas, porticoEntradas)
 }
 
 data class CrucePorticos(val filas: List<FilaCruce>) {
     val totalPorticoEntradas: Int get() = filas.sumOf { it.porticoEntradas }
-    val totalPorticoSalidas: Int get() = filas.sumOf { it.porticoSalidas }
     val totalRegistradoEntradas: Int get() = filas.sumOf { it.registradoEntradas }
-    val totalRegistradoSalidas: Int get() = filas.sumOf { it.registradoSalidas }
 
     val hayDatosPortico: Boolean
         get() = filas.any { it.porticoEntradas > 0 || it.porticoSalidas > 0 }
 
-    val coberturaEntradas: Float?
-        get() = if (totalPorticoEntradas > 0) {
-            totalRegistradoEntradas.toFloat() / totalPorticoEntradas
-        } else {
-            null
-        }
-
-    val coberturaSalidas: Float?
-        get() = if (totalPorticoSalidas > 0) {
-            totalRegistradoSalidas.toFloat() / totalPorticoSalidas
-        } else {
-            null
-        }
-
-    companion object {
-        fun vacio(): CrucePorticos =
-            CrucePorticos(Accesos.ids.map { FilaCruce(it, 0, 0, 0, 0) })
-    }
+    val coberturaEntradas: Float? get() = cobertura(totalRegistradoEntradas, totalPorticoEntradas)
 }
 
 /**
- * Cruza el conteo de pórticos con las personas registradas en la app. Los niños
- * acompañantes suman porque el pórtico también los cuenta.
+ * Cruza el conteo de pórticos con las personas registradas en la app (ya resumidas).
+ * Los niños acompañantes suman porque el pórtico también los cuenta.
  */
-fun calcularCruce(
-    registros: List<RegistroFlujo>,
-    porticos: List<ConteoPortico>
-): CrucePorticos {
-    val resumen = calcularResumen(registros)
-    val filas = resumen.porAcceso.map { acceso ->
-        val lecturas = porticos.filter { it.accesoId == acceso.accesoId }
+fun calcularCruce(resumen: ResumenGeneral, porticos: List<ConteoPortico>): CrucePorticos {
+    val lecturas = porticos.groupBy { it.accesoId }
+    return CrucePorticos(resumen.porAcceso.map { acceso ->
+        val delAcceso = lecturas[acceso.accesoId].orEmpty()
         FilaCruce(
             accesoId = acceso.accesoId,
-            porticoEntradas = lecturas.sumOf { it.entradas },
-            porticoSalidas = lecturas.sumOf { it.salidas },
+            porticoEntradas = delAcceso.sumOf { it.entradas },
+            porticoSalidas = delAcceso.sumOf { it.salidas },
             registradoEntradas = acceso.personasEntradas,
             registradoSalidas = acceso.personasSalidas
         )
-    }
-    return CrucePorticos(filas)
+    })
 }
