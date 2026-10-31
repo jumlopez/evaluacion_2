@@ -25,12 +25,10 @@ fun ImagenInteligente(
     modifier: Modifier = Modifier,
     tamano: Dp = 160.dp
 ) {
+    val circulo = modifier.size(tamano).clip(CircleShape)
     if (uri == null) {
         Box(
-            modifier = modifier
-                .size(tamano)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.secondaryContainer),
+            modifier = circulo.background(MaterialTheme.colorScheme.secondaryContainer),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -45,9 +43,7 @@ fun ImagenInteligente(
             model = uri,
             contentDescription = "Foto de perfil del operador",
             contentScale = ContentScale.Crop,
-            modifier = modifier
-                .size(tamano)
-                .clip(CircleShape)
+            modifier = circulo
         )
     }
 }

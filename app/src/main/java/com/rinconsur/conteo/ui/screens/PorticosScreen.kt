@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -26,15 +25,17 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rinconsur.conteo.model.Accesos
+import com.rinconsur.conteo.ui.components.Cargando
+import com.rinconsur.conteo.ui.components.ErrorTexto
 import com.rinconsur.conteo.viewmodel.ConteoPorticosViewModel
 
 /**
@@ -46,7 +47,7 @@ fun PorticosScreen(
     modifier: Modifier = Modifier,
     viewModel: ConteoPorticosViewModel = viewModel()
 ) {
-    val estado by viewModel.estado.collectAsState()
+    val estado by viewModel.estado.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(estado.guardadoOk) {
@@ -56,12 +57,7 @@ fun PorticosScreen(
         }
     }
 
-    if (estado.cargando) {
-        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        return
-    }
+    if (estado.cargando) return Cargando(modifier)
 
     Box(modifier.fillMaxSize()) {
         Column(
@@ -104,13 +100,7 @@ fun PorticosScreen(
                 }
             }
 
-            if (estado.error != null) {
-                Text(
-                    estado.error!!,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
+            ErrorTexto(estado.error)
 
             Button(onClick = viewModel::guardar, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.Save, contentDescription = null, modifier = Modifier.size(18.dp))

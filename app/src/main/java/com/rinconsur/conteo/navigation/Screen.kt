@@ -15,7 +15,6 @@ sealed class Screen(val route: String, val titulo: String) {
         /** Destinos de primer nivel que aparecen en la barra inferior. */
         val barraInferior = listOf(Dashboard, Registro, Porticos, Perfil)
 
-        fun desdeRuta(ruta: String?): Screen? =
-            listOf(Dashboard, Registro, Porticos, Modo, Perfil).firstOrNull { it.route == ruta }
+        fun desdeRuta(ruta: String?): Screen? = menuLateral.firstOrNull { it.route == ruta }
     }
 }

@@ -45,7 +45,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -53,11 +52,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rinconsur.conteo.model.Accesos
 import com.rinconsur.conteo.model.Genero
 import com.rinconsur.conteo.model.Movimiento
 import com.rinconsur.conteo.model.RangosEtarios
 import com.rinconsur.conteo.ui.components.DatoNumerico
+import com.rinconsur.conteo.ui.components.ErrorTexto
 import com.rinconsur.conteo.viewmodel.RegistroViewModel
 
 private fun iconoGenero(genero: Genero): ImageVector = when (genero) {
@@ -65,13 +66,6 @@ private fun iconoGenero(genero: Genero): ImageVector = when (genero) {
     Genero.MASCULINO -> Icons.Filled.Male
     Genero.OTRO -> Icons.Filled.Transgender
     Genero.NO_DECLARA -> Icons.AutoMirrored.Filled.HelpOutline
-}
-
-@Composable
-private fun ErrorTexto(mensaje: String?) {
-    if (mensaje != null) {
-        Text(mensaje, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-    }
 }
 
 /**
@@ -84,8 +78,8 @@ fun RegistroScreen(
     registroViewModel: RegistroViewModel,
     modifier: Modifier = Modifier
 ) {
-    val estado by registroViewModel.estado.collectAsState()
-    val mensaje by registroViewModel.mensaje.collectAsState()
+    val estado by registroViewModel.estado.collectAsStateWithLifecycle()
+    val mensaje by registroViewModel.mensaje.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(mensaje) {
@@ -149,43 +143,19 @@ fun RegistroScreen(
 
             // Personas por género
             Text("Personas observadas", style = MaterialTheme.typography.titleSmall)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                BotonGenero(
-                    genero = Genero.FEMENINO,
-                    cantidad = estado.cantidad(Genero.FEMENINO),
-                    onAgregar = { registroViewModel.agregarPersona(Genero.FEMENINO) },
-                    onQuitar = { registroViewModel.quitarPersona(Genero.FEMENINO) },
-                    modifier = Modifier.weight(1f)
-                )
-                BotonGenero(
-                    genero = Genero.MASCULINO,
-                    cantidad = estado.cantidad(Genero.MASCULINO),
-                    onAgregar = { registroViewModel.agregarPersona(Genero.MASCULINO) },
-                    onQuitar = { registroViewModel.quitarPersona(Genero.MASCULINO) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                BotonGenero(
-                    genero = Genero.OTRO,
-                    cantidad = estado.cantidad(Genero.OTRO),
-                    onAgregar = { registroViewModel.agregarPersona(Genero.OTRO) },
-                    onQuitar = { registroViewModel.quitarPersona(Genero.OTRO) },
-                    modifier = Modifier.weight(1f)
-                )
-                BotonGenero(
-                    genero = Genero.NO_DECLARA,
-                    cantidad = estado.cantidad(Genero.NO_DECLARA),
-                    onAgregar = { registroViewModel.agregarPersona(Genero.NO_DECLARA) },
-                    onQuitar = { registroViewModel.quitarPersona(Genero.NO_DECLARA) },
-                    modifier = Modifier.weight(1f)
-                )
+            // Dos botones por fila, en el orden de Genero.entries
+            Genero.entries.chunked(2).forEach { par ->
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    par.forEach { genero ->
+                        BotonGenero(
+                            genero = genero,
+                            cantidad = estado.cantidad(genero),
+                            onAgregar = { registroViewModel.agregarPersona(genero) },
+                            onQuitar = { registroViewModel.quitarPersona(genero) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
             }
             ErrorTexto(estado.errores.conteo)
 
@@ -214,27 +184,18 @@ fun RegistroScreen(
             if (estado.movimiento == Movimiento.ENTRADA) {
                 Text("¿Compró? (opcional)", style = MaterialTheme.typography.titleSmall)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = estado.compro == true,
-                        onClick = { registroViewModel.onComproChange(true) },
-                        label = { Text("Sí") },
-                        leadingIcon = {
-                            Icon(Icons.Filled.Check, null, Modifier.size(18.dp))
-                        }
-                    )
-                    FilterChip(
-                        selected = estado.compro == false,
-                        onClick = { registroViewModel.onComproChange(false) },
-                        label = { Text("No") },
-                        leadingIcon = {
-                            Icon(Icons.Filled.Close, null, Modifier.size(18.dp))
-                        }
-                    )
-                    FilterChip(
-                        selected = estado.compro == null,
-                        onClick = { registroViewModel.onComproChange(null) },
-                        label = { Text("Sin dato") }
-                    )
+                    listOf(
+                        Triple(true, "Sí", Icons.Filled.Check),
+                        Triple(false, "No", Icons.Filled.Close),
+                        Triple(null, "Sin dato", null)
+                    ).forEach { (valor, texto, icono) ->
+                        FilterChip(
+                            selected = estado.compro == valor,
+                            onClick = { registroViewModel.onComproChange(valor) },
+                            label = { Text(texto) },
+                            leadingIcon = icono?.let { { Icon(it, null, Modifier.size(18.dp)) } }
+                        )
+                    }
                 }
             }
 

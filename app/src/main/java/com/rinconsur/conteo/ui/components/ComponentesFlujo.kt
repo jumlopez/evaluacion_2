@@ -2,12 +2,15 @@ package com.rinconsur.conteo.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -20,13 +23,35 @@ import androidx.compose.ui.unit.dp
 import com.rinconsur.conteo.model.Accesos
 import com.rinconsur.conteo.model.CrucePorticos
 import com.rinconsur.conteo.model.ResumenAcceso
+import com.rinconsur.conteo.model.ResumenGeneral
 import kotlin.math.roundToInt
+
+@Composable
+fun Cargando(modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+}
+
+@Composable
+fun ErrorTexto(mensaje: String?) {
+    if (mensaje != null) {
+        Text(mensaje, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+    }
+}
 
 @Composable
 fun DatoNumerico(etiqueta: String, valor: Int, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(valor.toString(), style = MaterialTheme.typography.headlineMedium)
         Text(etiqueta, style = MaterialTheme.typography.labelMedium)
+    }
+}
+
+@Composable
+fun FilaTotales(entradas: Int, salidas: Int, aforoNeto: Int) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+        DatoNumerico("Entradas", entradas)
+        DatoNumerico("Salidas", salidas)
+        DatoNumerico("Aforo neto", aforoNeto)
     }
 }
 
@@ -38,11 +63,7 @@ fun TarjetaAcceso(resumen: ResumenAcceso, modifier: Modifier = Modifier) {
     Card(modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(Accesos.etiqueta(resumen.accesoId), style = MaterialTheme.typography.titleMedium)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                DatoNumerico("Entradas", resumen.personasEntradas)
-                DatoNumerico("Salidas", resumen.personasSalidas)
-                DatoNumerico("Aforo neto", resumen.aforoNeto)
-            }
+            FilaTotales(resumen.personasEntradas, resumen.personasSalidas, resumen.aforoNeto)
             LinearProgressIndicator(progress = { progreso }, modifier = Modifier.fillMaxWidth())
             Text(
                 "${(resumen.pctCompra * 100).roundToInt()}% de las entradas compró · " +
@@ -104,24 +125,18 @@ fun PanelCrucePorticos(cruce: CrucePorticos, modifier: Modifier = Modifier) {
 
 /** Perfil de las entradas: género, edad y acompañantes niños. */
 @Composable
-fun PanelSegmentacion(
-    generoEntradas: Map<String, Int>,
-    edadEntradas: Map<String, Int>,
-    totalNinos: Int,
-    pctConNinos: Float,
-    modifier: Modifier = Modifier
-) {
+fun PanelSegmentacion(resumen: ResumenGeneral, modifier: Modifier = Modifier) {
     Card(modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Perfil de las entradas", style = MaterialTheme.typography.titleMedium)
-            BarrasSegmentacion("Género", generoEntradas)
+            BarrasSegmentacion("Género", resumen.generoEntradas)
             HorizontalDivider()
-            BarrasSegmentacion("Rango etario", edadEntradas)
+            BarrasSegmentacion("Rango etario", resumen.edadEntradas)
             HorizontalDivider()
             Text("Acompañantes niños", style = MaterialTheme.typography.titleSmall)
             Text(
-                "$totalNinos niños registrados · " +
-                    "${(pctConNinos * 100).roundToInt()}% de las personas entró con niños",
+                "${resumen.totalNinos} niños registrados · " +
+                    "${(resumen.pctConNinos * 100).roundToInt()}% de las personas entró con niños",
                 style = MaterialTheme.typography.bodySmall
             )
         }
@@ -139,11 +154,7 @@ private fun BarrasSegmentacion(titulo: String, datos: Map<String, Int>) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    etiqueta,
-                    Modifier.width(92.dp),
-                    style = MaterialTheme.typography.labelLarge
-                )
+                Text(etiqueta, Modifier.width(92.dp), style = MaterialTheme.typography.labelLarge)
                 LinearProgressIndicator(progress = { fraccion }, modifier = Modifier.weight(1f))
                 Text(cantidad.toString(), style = MaterialTheme.typography.labelLarge)
             }
