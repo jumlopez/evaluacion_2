@@ -178,4 +178,16 @@ class ValidacionesTest {
         assertEquals(0, estado.cantidad(Genero.FEMENINO, RangosEtarios.JOVEN))
         assertTrue(estado.gruposRegistrados.isEmpty())
     }
+
+    @Test
+    fun `limpiar conteo conserva acceso y movimiento`() {
+        val limpio = valido.limpiarConteo()
+
+        assertEquals(valido.accesoId, limpio.accesoId)
+        assertEquals(valido.movimiento, limpio.movimiento)
+        assertEquals(0, limpio.totalPersonas)
+        assertEquals(0, limpio.ninosAcompanantes)
+        assertFalse(limpio.errores.hayErrores())
+        assertTrue(limpio.gruposRegistrados.isEmpty())
+    }
 }

@@ -5,12 +5,18 @@ data class ResumenAcceso(
     val personasEntradas: Int,
     val personasSalidas: Int,
     val compradores: Int,
+    val noCompradores: Int,
     val salidasConDatoCompra: Int,
+    val salidasSinDatoCompra: Int,
     val ninosEntradas: Int,
     val ninosSalidas: Int
 ) {
-    /** Aforo neto del acceso: personas que entraron menos las que salieron. */
-    val aforoNeto: Int get() = personasEntradas - personasSalidas
+    /**
+     * Aforo neto del acceso: personas que entraron menos las que salieron. Nunca es
+     * negativo: si las salidas superan a las entradas (registros de días anteriores o
+     * conteos incompletos) el aforo se informa como 0.
+     */
+    val aforoNeto: Int get() = (personasEntradas - personasSalidas).coerceAtLeast(0)
 
     /** Proporción (0..1) de las salidas con dato de compra que efectivamente compró. */
     val pctCompra: Float
@@ -25,9 +31,12 @@ data class ResumenGeneral(
 ) {
     val totalPersonasEntradas: Int get() = porAcceso.sumOf { it.personasEntradas }
     val totalPersonasSalidas: Int get() = porAcceso.sumOf { it.personasSalidas }
-    val aforoNeto: Int get() = totalPersonasEntradas - totalPersonasSalidas
+    /** Aforo neto de la tienda; nunca negativo, igual que en cada acceso. */
+    val aforoNeto: Int get() = (totalPersonasEntradas - totalPersonasSalidas).coerceAtLeast(0)
     val totalCompradores: Int get() = porAcceso.sumOf { it.compradores }
+    val totalNoCompradores: Int get() = porAcceso.sumOf { it.noCompradores }
     val totalConDatoCompra: Int get() = porAcceso.sumOf { it.salidasConDatoCompra }
+    val totalSinDatoCompra: Int get() = porAcceso.sumOf { it.salidasSinDatoCompra }
     val totalNinos: Int get() = porAcceso.sumOf { it.ninosEntradas }
     val totalNinosSalidas: Int get() = porAcceso.sumOf { it.ninosSalidas }
 
@@ -63,7 +72,9 @@ fun calcularResumen(registros: List<RegistroFlujo>): ResumenGeneral {
             personasEntradas = entradasAcceso.sumOf { it.cantidad + it.ninosAcompanantes },
             personasSalidas = salidasAcceso.sumOf { it.cantidad + it.ninosAcompanantes },
             compradores = salidasAcceso.filter { it.compro == true }.sumOf { it.cantidad },
+            noCompradores = salidasAcceso.filter { it.compro == false }.sumOf { it.cantidad },
             salidasConDatoCompra = salidasAcceso.filter { it.compro != null }.sumOf { it.cantidad },
+            salidasSinDatoCompra = salidasAcceso.filter { it.compro == null }.sumOf { it.cantidad },
             ninosEntradas = entradasAcceso.sumOf { it.ninosAcompanantes },
             ninosSalidas = salidasAcceso.sumOf { it.ninosAcompanantes }
         )
@@ -72,14 +83,13 @@ fun calcularResumen(registros: List<RegistroFlujo>): ResumenGeneral {
     val porGenero = Genero.entries.associate { genero ->
         genero.etiqueta to entradas.filter { it.genero == genero.name }.sumOf { it.cantidad }
     }
-    // Se conservan visibles las etiquetas antiguas que todavía existan en la base.
-    val etiquetasEdad = RangosEtarios.opciones +
-        entradas.map { it.rangoEtario }
-            .filter { it !in RangosEtarios.opciones }
-            .distinct()
-            .sorted()
-    val porEdad = etiquetasEdad.associateWith { rango ->
-        entradas.filter { it.rangoEtario == rango }.sumOf { it.cantidad }
+    // Solo se agregan las tres características etarias: los rangos de edad de
+    // versiones anteriores se convierten a su característica equivalente y los
+    // registros sin característica ("No declara") no se segmentan.
+    val porEdad = RangosEtarios.opciones.associateWith { caracteristica ->
+        entradas
+            .filter { RangosEtarios.normalizar(it.rangoEtario) == caracteristica }
+            .sumOf { it.cantidad }
     }
     val personasConNinos = entradas.filter { it.ninosAcompanantes > 0 }.sumOf { it.cantidad }
 

@@ -35,6 +35,4 @@ class MainViewModel : ViewModel() {
     }
 
     fun navigateBack() = emitir(NavigationEvent.PopBackStack)
-
-    fun navigateUp() = emitir(NavigationEvent.NavigateUp)
 }

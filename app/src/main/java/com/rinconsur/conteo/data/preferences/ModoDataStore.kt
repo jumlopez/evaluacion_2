@@ -8,16 +8,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 // Declaramos el DataStore con nombre 'preferencias_rincon' (Guía 12)
-val Context.dataStore by preferencesDataStore(name = "preferencias_rincon")
+private val Context.dataStore by preferencesDataStore(name = "preferencias_rincon")
 
 class ModoDataStore(private val context: Context) {
 
-    private val MODO_ANALISIS = booleanPreferencesKey("modo_analisis_transito")
+    private val CLAVE_MODO_ANALISIS = booleanPreferencesKey("modo_analisis_transito")
 
     suspend fun guardarEstado(valor: Boolean) {
-        context.dataStore.edit { preferencias -> preferencias[MODO_ANALISIS] = valor }
+        context.dataStore.edit { preferencias -> preferencias[CLAVE_MODO_ANALISIS] = valor }
     }
 
     fun obtenerEstado(): Flow<Boolean?> =
-        context.dataStore.data.map { preferencias -> preferencias[MODO_ANALISIS] }
+        context.dataStore.data.map { preferencias -> preferencias[CLAVE_MODO_ANALISIS] }
 }

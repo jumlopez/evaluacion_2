@@ -1,8 +1,15 @@
 package com.rinconsur.conteo.navigation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MeetingRoom
 import androidx.compose.material.icons.filled.Menu
@@ -27,12 +34,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.rinconsur.conteo.R
+import com.rinconsur.conteo.ui.screens.AnalisisScreen
 import com.rinconsur.conteo.ui.screens.DashboardScreen
 import com.rinconsur.conteo.ui.screens.ModoScreen
 import com.rinconsur.conteo.ui.screens.PerfilScreen
@@ -43,11 +53,19 @@ import com.rinconsur.conteo.viewmodel.RegistroViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+private const val DURACION_ENTRADA_MS = 320
+private const val DURACION_FADE_ENTRADA_MS = 220
+private const val DURACION_SALIDA_MS = 160
+private const val DURACION_FADE_VOLVER_MS = 200
+private const val DURACION_SALIDA_VOLVER_MS = 260
+private const val DURACION_FADE_SALIDA_VOLVER_MS = 200
+
 private fun icono(screen: Screen): ImageVector = when (screen) {
     Screen.Dashboard -> Icons.Default.Home
     Screen.Registro -> Icons.Default.Add
     Screen.Porticos -> Icons.Default.MeetingRoom
     Screen.Modo -> Icons.Default.Settings
+    Screen.Analisis -> Icons.Default.BarChart
     Screen.Perfil -> Icons.Default.Person
 }
 
@@ -81,7 +99,6 @@ fun AppNavigation(
                 }
 
                 NavigationEvent.PopBackStack -> navController.popBackStack()
-                NavigationEvent.NavigateUp -> navController.navigateUp()
             }
         }
     }
@@ -93,11 +110,15 @@ fun AppNavigation(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                Text("Rincón Sur · Flujo", modifier = Modifier.padding(16.dp))
+                Text(
+                    stringResource(R.string.nav_encabezado_menu),
+                    modifier = Modifier.padding(16.dp)
+                )
                 Screen.menuLateral.forEach { screen ->
+                    val titulo = stringResource(screen.tituloRes)
                     NavigationDrawerItem(
-                        label = { Text(screen.titulo) },
-                        icon = { Icon(icono(screen), contentDescription = screen.titulo) },
+                        label = { Text(titulo) },
+                        icon = { Icon(icono(screen), contentDescription = titulo) },
                         selected = pantallaActual == screen,
                         onClick = {
                             scope.launch { drawerState.close() }
@@ -112,10 +133,27 @@ fun AppNavigation(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text(pantallaActual?.titulo ?: "Rincón Sur") },
+                    title = {
+                        Text(
+                            pantallaActual?.let { stringResource(it.tituloRes) }
+                                ?: stringResource(R.string.nav_app)
+                        )
+                    },
                     navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menú")
+                        if (pantallaActual == Screen.Analisis) {
+                            IconButton(onClick = { mainViewModel.navigateBack() }) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.nav_volver)
+                                )
+                            }
+                        } else {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(
+                                    Icons.Default.Menu,
+                                    contentDescription = stringResource(R.string.nav_menu)
+                                )
+                            }
                         }
                     }
                 )
@@ -124,11 +162,12 @@ fun AppNavigation(
                 if (pantallaActual in Screen.barraInferior) {
                     NavigationBar {
                         Screen.barraInferior.forEach { screen ->
+                            val titulo = stringResource(screen.tituloRes)
                             NavigationBarItem(
                                 selected = pantallaActual == screen,
                                 onClick = { mainViewModel.navigateTopLevel(screen) },
-                                label = { Text(screen.titulo.substringBefore(" ")) },
-                                icon = { Icon(icono(screen), contentDescription = screen.titulo) }
+                                label = { Text(stringResource(screen.tituloCortoRes)) },
+                                icon = { Icon(icono(screen), contentDescription = titulo) }
                             )
                         }
                     }
@@ -143,7 +182,25 @@ fun AppNavigation(
                 composable(Screen.Dashboard.route) { DashboardScreen() }
                 composable(Screen.Registro.route) { RegistroScreen(registroViewModel) }
                 composable(Screen.Porticos.route) { PorticosScreen() }
-                composable(Screen.Modo.route) { ModoScreen() }
+                composable(Screen.Modo.route) {
+                    ModoScreen(onVerGraficos = { mainViewModel.navigateTo(Screen.Analisis) })
+                }
+                composable(
+                    route = Screen.Analisis.route,
+                    enterTransition = {
+                        slideInHorizontally(
+                            animationSpec = tween(DURACION_ENTRADA_MS)
+                        ) { ancho -> ancho } + fadeIn(animationSpec = tween(DURACION_FADE_ENTRADA_MS))
+                    },
+                    exitTransition = { fadeOut(animationSpec = tween(DURACION_SALIDA_MS)) },
+                    popEnterTransition = { fadeIn(animationSpec = tween(DURACION_FADE_VOLVER_MS)) },
+                    popExitTransition = {
+                        slideOutHorizontally(
+                            animationSpec = tween(DURACION_SALIDA_VOLVER_MS)
+                        ) { ancho -> ancho } +
+                            fadeOut(animationSpec = tween(DURACION_FADE_SALIDA_VOLVER_MS))
+                    }
+                ) { AnalisisScreen() }
                 composable(Screen.Perfil.route) { PerfilScreen() }
             }
         }

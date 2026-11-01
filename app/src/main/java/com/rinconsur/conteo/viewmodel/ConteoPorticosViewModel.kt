@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rinconsur.conteo.RinconApp
+import com.rinconsur.conteo.R
 import com.rinconsur.conteo.model.Accesos
 import com.rinconsur.conteo.model.ConteoPortico
 import com.rinconsur.conteo.model.inicioDelDia
@@ -13,10 +14,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+private const val MAX_DIGITOS_PORTICO = 6
+
+/** Personas que el pórtico marcó en un acceso. Un solo total, sin entrada/salida. */
 data class FilaPorticoUi(
     val accesoId: Int,
-    val entradas: String = "",
-    val salidas: String = ""
+    val personas: String = ""
 )
 
 data class PorticosUiState(
@@ -27,11 +30,14 @@ data class PorticosUiState(
 ) {
     fun fila(accesoId: Int): FilaPorticoUi =
         filas.firstOrNull { it.accesoId == accesoId } ?: FilaPorticoUi(accesoId)
+
+    val totalPersonas: Int get() = filas.sumOf { it.personas.toIntOrNull() ?: 0 }
 }
 
 /**
- * El operador transcribe las lecturas diarias de los pórticos de cada acceso para
- * poder compararlas con lo registrado desde las cámaras.
+ * El operador transcribe las lecturas diarias de los pórticos de cada acceso. Como
+ * el pórtico no distingue entrada de salida, se guarda solo el total de personas
+ * que transitaron por cada acceso.
  */
 class ConteoPorticosViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -51,8 +57,7 @@ class ConteoPorticosViewModel(application: Application) : AndroidViewModel(appli
                     val conteo = guardados.firstOrNull { it.accesoId == id }
                     FilaPorticoUi(
                         accesoId = id,
-                        entradas = conteo?.entradas?.toString() ?: "",
-                        salidas = conteo?.salidas?.toString() ?: ""
+                        personas = conteo?.personas?.toString() ?: ""
                     )
                 },
                 cargando = false
@@ -60,33 +65,32 @@ class ConteoPorticosViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    fun onEntradasChange(accesoId: Int, valor: String) =
-        actualizarFila(accesoId) { it.copy(entradas = soloDigitos(valor)) }
-
-    fun onSalidasChange(accesoId: Int, valor: String) =
-        actualizarFila(accesoId) { it.copy(salidas = soloDigitos(valor)) }
-
-    private fun actualizarFila(accesoId: Int, transform: (FilaPorticoUi) -> FilaPorticoUi) {
-        _estado.update { actual ->
-            actual.copy(
-                filas = actual.filas.map { if (it.accesoId == accesoId) transform(it) else it },
-                error = null,
-                guardadoOk = false
-            )
-        }
+    fun onPersonasChange(accesoId: Int, valor: String) = _estado.update { actual ->
+        actual.copy(
+            filas = actual.filas.map {
+                if (it.accesoId == accesoId) it.copy(personas = soloDigitos(valor)) else it
+            },
+            error = null,
+            guardadoOk = false
+        )
     }
 
     fun guardar() {
         val actual = _estado.value
-        if (actual.filas.all { it.entradas.isBlank() && it.salidas.isBlank() }) {
-            _estado.update { it.copy(error = "Ingresa al menos un conteo de pórtico") }
+        if (actual.filas.all { it.personas.isBlank() }) {
+            _estado.update {
+                it.copy(
+                    error = getApplication<Application>()
+                        .getString(R.string.porticos_error_sin_conteo)
+                )
+            }
             return
         }
 
         viewModelScope.launch {
             actual.filas.forEach { fila ->
                 val existente = idsExistentes[fila.accesoId]
-                if (fila.entradas.isBlank() && fila.salidas.isBlank()) {
+                if (fila.personas.isBlank()) {
                     if (existente != null) repositorio.eliminarPortico(fila.accesoId, dia)
                 } else {
                     repositorio.guardarPortico(
@@ -94,8 +98,7 @@ class ConteoPorticosViewModel(application: Application) : AndroidViewModel(appli
                             id = existente ?: 0,
                             accesoId = fila.accesoId,
                             fechaMillis = dia,
-                            entradas = fila.entradas.toIntOrNull() ?: 0,
-                            salidas = fila.salidas.toIntOrNull() ?: 0,
+                            personas = fila.personas.toIntOrNull() ?: 0,
                             actualizadoEn = System.currentTimeMillis()
                         )
                     )
@@ -110,5 +113,6 @@ class ConteoPorticosViewModel(application: Application) : AndroidViewModel(appli
         _estado.update { it.copy(guardadoOk = false) }
     }
 
-    private fun soloDigitos(valor: String): String = valor.filter(Char::isDigit).take(6)
+    private fun soloDigitos(valor: String): String =
+        valor.filter(Char::isDigit).take(MAX_DIGITOS_PORTICO)
 }

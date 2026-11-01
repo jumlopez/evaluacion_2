@@ -10,22 +10,22 @@ Los accesos se distribuyen así: **1, 2 y 3 en el primer piso; 4 en el segundo p
 ## Cómo funciona en la tienda
 
 La tienda ya cuenta con **pórticos** (torniquetes de conteo) en cada acceso, que entregan el
-número de personas que pasan. Esos pórticos **no distinguen género, edad ni acompañantes**, por
-lo que la app cumple dos roles complementarios:
+número de personas que transitan. Esos pórticos **no distinguen entrada de salida, género, edad ni
+acompañantes**, por lo que la app cumple dos roles complementarios:
 
 1. **Captura rápida (operador de cámaras)**: una persona frente a las cámaras de seguridad observa
    a los clientes y registra, con botones e iconos, cuántas personas entran o salen por acceso,
    su género, la característica etaria y si vienen con niños. En las salidas, apenas se elige la
    característica etaria, un segundo popup pregunta si la persona compró. Dos toques por persona,
    sin formularios largos.
-2. **Conteos de pórticos**: al cierre de cada bloque horario se digitan las lecturas de entradas y
-   salidas que entregaron los pórticos de cada acceso.
+2. **Conteos de pórticos**: al cierre de cada bloque horario se digita, por acceso, el total de
+   personas que marcó el pórtico (un solo número, porque el pórtico no separa entradas de salidas).
 
-El **Dashboard** cruza ambas fuentes: muestra el conteo del pórtico, lo registrado por el operador,
-la diferencia entre ambos y el **porcentaje de cobertura** (qué proporción del flujo real quedó
-caracterizada). También calcula aforo neto, conversión de compra (sobre las salidas con dato),
-distribución por género/edad y
-niños acompañantes.
+El **Dashboard** cruza ambas fuentes **por acceso**: compara el total del pórtico con la suma de
+entradas y salidas registradas por el operador, y muestra la diferencia y el **porcentaje de
+cobertura** (qué proporción del flujo real quedó caracterizada). También calcula aforo neto (que
+nunca se muestra negativo: si las salidas superan a las entradas se informa 0), conversión de compra
+(sobre las salidas con dato), distribución por género/edad y niños acompañantes.
 
 > **Privacidad**: el operador solo registra **conteos agregados** (cuántos hombres, mujeres, otros,
 > niños). La app no guarda nombres, RUT, rostros ni imágenes de las personas.
@@ -54,7 +54,7 @@ operador digita. Tampoco hay backend ni sincronización remota: **Room/SQLite es
 | `fechaHora` | Momento del registro |
 | `movimiento` | `ENTRADA` o `SALIDA` |
 | `genero` | `FEMENINO`, `MASCULINO`, `OTRO`, `NO_DECLARA` |
-| `rangoEtario` | `Joven`, `Adulto`, `Adulto mayor` (las etiquetas antiguas se conservan si existen en la base) |
+| `rangoEtario` | Característica etaria: `Joven`, `Adulto`, `Adulto mayor` (los rangos antiguos se agrupan en estas tres y nunca se muestran) |
 | `cantidad` | Personas del grupo con ese movimiento/género/rango |
 | `ninosAcompanantes` | Niños adicionales que acompañan al grupo (0–20) |
 | `compro` | Solo en salidas: `true`/`false`; en entradas queda `null` (la compra se conoce al salir) |
@@ -68,7 +68,7 @@ que cero; los niños acompañantes se descuentan una sola vez (en la primera fil
 |---|---|
 | `accesoId` | 1–4 |
 | `fechaMillis` | Inicio del día (una lectura por acceso y día) |
-| `entradas` / `salidas` | Personas contadas por el pórtico |
+| `personas` | Total de personas que marcó el pórtico (tránsitos, sin separar entrada/salida) |
 | `actualizadoEn` | Última edición del registro |
 
 Índice único `(accesoId, fechaMillis)`: volver a guardar el día **actualiza** la lectura en lugar
@@ -76,10 +76,12 @@ de duplicarla.
 
 ### Migraciones
 
-La base `rincon_flujo.db` está en la **versión 3**:
+La base `rincon_flujo.db` está en la **versión 4**:
 
 - **v1 → v2**: transforma el esquema anterior (`tipo`) en `movimiento` + `compro`.
 - **v2 → v3**: crea `conteos_portico` con su índice único.
+- **v3 → v4**: los pórticos pasan de `entradas`/`salidas` a un único total `personas`
+  (`entradas + salidas` de las lecturas existentes).
 
 Las migraciones están registradas en `AppDatabase`, por lo que una instalación existente conserva
 sus registros al actualizar la app.
@@ -89,7 +91,8 @@ sus registros al actualizar la app.
 1. **Dashboard**: entradas, salidas, aforo neto y % de conversión general; tarjetas por acceso con
    su piso, filtro por periodo (Hoy / 7 días / Todo) y estado vacío cuando aún no hay registros.
    Incluye el panel **Cruce con pórticos** (pórtico vs. registrado, diferencia y cobertura) y, con el
-   *Modo análisis* activo o en pantallas expandidas, el perfil por género/edad de las entradas.
+   *Modo análisis* activo o en pantallas expandidas, el perfil de las entradas (género,
+   característica etaria y niños acompañantes) junto a la compra declarada en las salidas.
 2. **Registro rápido**: se elige acceso (chips 1–4 con su piso) y movimiento (Entrada / Salida).
    Luego se toca la tarjeta del género (**Femenino** o **Masculino**) y se abre un **popup animado**
    donde se elige la característica: **Joven**, **Adulto** o **Adulto mayor**. Si el movimiento es
@@ -98,9 +101,15 @@ sus registros al actualizar la app.
    El detalle del conteo queda debajo con −/+ para corregir, junto al botón **+1** de la tarjeta de
    niños acompañantes. Un botón **Guardar N** confirma cuántas personas se registraron y limpia los
    contadores manteniendo el acceso y el movimiento para seguir capturando.
-3. **Pórticos**: por cada acceso se digitan las entradas y salidas del día y se guardan con un solo
-   botón; dejar ambos campos vacíos elimina la lectura del día.
-4. **Modo análisis**: interruptor persistente (DataStore) con animaciones.
+3. **Pórticos**: por cada acceso se digita el total de personas del día que marcó el pórtico y se
+   guarda con un solo botón; dejar un acceso en blanco elimina su lectura del día.
+4. **Modo análisis**: pantalla con el estado persistente (DataStore), animaciones y un botón
+   **Ver gráficos del flujo** que abre, con una transición de diapositiva + fundido, la pantalla de
+   gráficos. Ahí se dibujan con Compose (sin librerías externas) las barras de entradas/salidas por
+   acceso, las donas de género y de característica etaria, la dona de compra en las salidas
+   (compró / no compró / sin dato), los acompañantes niños y las barras de cobertura de pórticos,
+   todo filtrable por periodo. La misma información se resume en el dashboard cuando el modo está
+   activo.
 5. **Perfil**: foto del operador desde galería o cámara.
 
 ## Qué se tomó de cada guía
@@ -111,8 +120,8 @@ sus registros al actualizar la app.
 | 8 — Pantalla base | Scaffold, TopAppBar, Column/Row, Text, Button, Image, Modifier, colores de MaterialTheme | `DashboardScreen.kt`, `AppNavigation.kt`, `res/drawable/logo_rincon.xml` |
 | 9 — Adaptabilidad | Window Size Classes (Compact / Medium / Expanded) con `obtenerWindowSizeClass()` | `ui/utils/WindowSizeUtils.kt`, `DashboardScreen.kt` |
 | 10 — Navegación | `sealed class Screen`, `NavigationEvent`, `MainViewModel`, NavHost, Drawer, NavigationBar | paquete `navigation/`, `MainViewModel.kt` |
-| 11 — Formularios | `RegistroUiState` / `RegistroErrores`, validación reactiva, ViewModel con API de incremento/decremento | `model/RegistroUiState.kt`, `RegistroViewModel.kt`, `RegistroScreen.kt` |
-| 12 — Animaciones y estados | DataStore, `rememberSaveable`, `derivedStateOf`, `animateColorAsState`, `AnimatedVisibility`, `AnimatedContent`, loader | `ModoViewModel.kt`, `ModoScreen.kt`, `ModoDataStore.kt` |
+| 11 — Formularios | `RegistroUiState` / `RegistroErrores`, validación reactiva, ViewModel con API de incremento/decremento | `model/RegistroUiState.kt`, `model/RegistroErrores.kt`, `RegistroViewModel.kt`, `RegistroScreen.kt` |
+| 12 — Animaciones y estados | DataStore, `rememberSaveable`, `derivedStateOf`, `animateColorAsState`, `AnimatedVisibility`, `AnimatedContent`, transiciones del NavHost, loader | `ModoViewModel.kt`, `ModoScreen.kt`, `AnalisisScreen.kt`, `ModoDataStore.kt` |
 | 13 — Recurso nativo | Galería (`GetContent`) y cámara (`TakePicture`), `FileProvider`, `ImagenInteligente` circular | `PerfilViewModel.kt`, `PerfilScreen.kt`, `ui/components/ImagenInteligente.kt`, `res/xml/file_paths.xml` |
 
 ## Estructura del código
@@ -120,12 +129,18 @@ sus registros al actualizar la app.
 ```
 app/src/main/java/com/rinconsur/conteo/
 ├── data/local/          Room: AppDatabase, RegistroDao, ConteoPorticoDao
+├── data/preferences/    ModoDataStore (DataStore de preferencias)
 ├── data/repository/     FlujoRepository (única puerta de entrada a los datos)
-├── model/               RegistroFlujo, ConteoPortico, Resumen, CrucePorticos, RegistroUiState, Catalogos
+├── model/               RegistroFlujo, ConteoPortico, Resumen, CrucePorticos, RegistroUiState,
+│                        RegistroErrores, GrupoConteo, Catalogos, Periodo
 ├── viewmodel/           Dashboard, Registro, ConteoPorticos, Modo, Perfil, Main
-├── ui/screens/          Dashboard, Registro, Porticos, Modo, Perfil
-├── ui/components/       TarjetaAcceso, PanelCrucePorticos, ImagenInteligente
-└── navigation/          Screen, AppNavigation
+├── ui/screens/          Dashboard, Registro (+ RegistroPopups e IconosRegistro), Porticos,
+│                        Modo, Analisis, Perfil
+├── ui/components/       TarjetaAcceso, PanelCrucePorticos, Graficos (barras/donas), ImagenInteligente
+├── ui/utils/            WindowSizeUtils, Porcentajes
+└── navigation/          Screen, NavigationEvent, AppNavigation
+
+app/src/main/res/values/strings.xml → todos los textos visibles de la UI
 ```
 
 ## Cómo ejecutar

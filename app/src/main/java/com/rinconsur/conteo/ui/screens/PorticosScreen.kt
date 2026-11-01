@@ -26,32 +26,36 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.rinconsur.conteo.R
 import com.rinconsur.conteo.model.Accesos
 import com.rinconsur.conteo.viewmodel.ConteoPorticosViewModel
 
 /**
- * El operador transcribe las lecturas diarias de los pórticos de cada acceso para
- * cruzarlas con las personas registradas desde las cámaras.
+ * El operador transcribe las personas que marcó el pórtico de cada acceso para
+ * cruzarlas con las personas registradas desde las cámaras. El pórtico no distingue
+ * entrada de salida, así que solo se anota un total por acceso.
  */
 @Composable
 fun PorticosScreen(
     modifier: Modifier = Modifier,
     viewModel: ConteoPorticosViewModel = viewModel()
 ) {
-    val estado by viewModel.estado.collectAsState()
+    val estado by viewModel.estado.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    val mensajeGuardado = stringResource(R.string.porticos_guardado_ok)
 
     LaunchedEffect(estado.guardadoOk) {
         if (estado.guardadoOk) {
-            snackbar.showSnackbar("Conteos de pórticos guardados")
+            snackbar.showSnackbar(mensajeGuardado)
             viewModel.consumirGuardado()
         }
     }
@@ -71,10 +75,12 @@ fun PorticosScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Conteo de pórticos de hoy", style = MaterialTheme.typography.titleLarge)
             Text(
-                "Transcribe las entradas y salidas que marca cada pórtico. " +
-                    "El dashboard las compara con lo registrado desde las cámaras.",
+                stringResource(R.string.porticos_titulo),
+                style = MaterialTheme.typography.titleLarge
+            )
+            Text(
+                stringResource(R.string.porticos_descripcion),
                 style = MaterialTheme.typography.bodySmall
             )
 
@@ -83,31 +89,22 @@ fun PorticosScreen(
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(Accesos.etiqueta(acceso.id), style = MaterialTheme.typography.titleSmall)
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            OutlinedTextField(
-                                value = fila.entradas,
-                                onValueChange = { viewModel.onEntradasChange(acceso.id, it) },
-                                label = { Text("Entradas") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true,
-                                modifier = Modifier.weight(1f)
-                            )
-                            OutlinedTextField(
-                                value = fila.salidas,
-                                onValueChange = { viewModel.onSalidasChange(acceso.id, it) },
-                                label = { Text("Salidas") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
+                        OutlinedTextField(
+                            value = fila.personas,
+                            onValueChange = { viewModel.onPersonasChange(acceso.id, it) },
+                            label = { Text(stringResource(R.string.porticos_campo)) },
+                            supportingText = { Text(stringResource(R.string.porticos_campo_ayuda)) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }
 
-            if (estado.error != null) {
+            estado.error?.let { mensaje ->
                 Text(
-                    estado.error!!,
+                    mensaje,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -116,12 +113,22 @@ fun PorticosScreen(
             Button(onClick = viewModel::guardar, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.Save, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Guardar conteos de hoy")
+                Text(stringResource(R.string.porticos_guardar))
             }
-            Text(
-                "Deja un acceso en blanco si su pórtico no tiene lectura.",
-                style = MaterialTheme.typography.bodySmall
-            )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    stringResource(R.string.porticos_blanco),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    stringResource(R.string.porticos_total, estado.totalPersonas),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
 
         SnackbarHost(

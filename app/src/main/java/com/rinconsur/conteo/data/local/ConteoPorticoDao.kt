@@ -10,9 +10,6 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ConteoPorticoDao {
 
-    @Query("SELECT * FROM conteos_portico WHERE fechaMillis = :dia ORDER BY accesoId")
-    fun observarDia(dia: Long): Flow<List<ConteoPortico>>
-
     @Query("SELECT * FROM conteos_portico WHERE fechaMillis >= :desde ORDER BY fechaMillis DESC, accesoId")
     fun observarDesde(desde: Long): Flow<List<ConteoPortico>>
 

@@ -1,3 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Rincón Sur · Flujo</string>
+
+    <!-- Navegación -->
+    <string name="nav_app">Rincón Sur</string>
+    <string name="nav_menu">Menú</string>
+    <string name="nav_volver">Volver</string>
+    <string name="nav_cerrar">Cerrar</string>
+    <string name="nav_encabezado_menu">Rincón Sur · Flujo</string>
+
+    <string name="pantalla_dashboard">Flujo por acceso</string>
+    <string name="pantalla_registro">Registro rápido</string>
+    <string name="pantalla_porticos">Conteos de pórticos</string>
+    <string name="pantalla_modo">Modo análisis</string>
+    <string name="pantalla_analisis">Gráficos del flujo</string>
+    <string name="pantalla_perfil">Perfil del operador</string>
+
+    <string name="pantalla_corta_dashboard">Flujo</string>
+    <string name="pantalla_corta_registro">Registro</string>
+    <string name="pantalla_corta_porticos">Conteos</string>
+    <string name="pantalla_corta_perfil">Perfil</string>
+
+    <!-- Etiquetas compartidas -->
+    <string name="etiqueta_entradas">Entradas</string>
+    <string name="etiqueta_salidas">Salidas</string>
+    <string name="etiqueta_aforo_neto">Aforo neto</string>
+    <string name="etiqueta_genero">Género</string>
+    <string name="etiqueta_caracteristica_etaria">Característica etaria</string>
+    <string name="etiqueta_ninos">Niños</string>
+    <string name="etiqueta_personas">Personas</string>
+    <string name="etiqueta_total">Total</string>
+    <string name="etiqueta_compro">Compró</string>
+    <string name="etiqueta_no_compro">No compró</string>
+    <string name="etiqueta_sin_dato">Sin dato</string>
+    <string name="etiqueta_compra_salidas">Compra en las salidas</string>
+    <string name="etiqueta_ninos_acompanantes">Acompañantes niños</string>
+    <string name="etiqueta_porticos_vs_registro">Pórticos vs. registro</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_titulo">Tienda Departamental Rincón Sur</string>
+    <string name="dashboard_subtitulo">Registro real de entradas, salidas y compra por acceso</string>
+    <string name="dashboard_logo">Logo Tienda Departamental Rincón Sur</string>
+    <string name="dashboard_resumen">%1$d%% de las salidas compró · %2$d niños acompañantes</string>
+    <string name="dashboard_sin_datos">Aún no hay registros en este periodo. Usa Registro rápido para capturar las personas que ves en las cámaras.</string>
+
+    <!-- Registro rápido -->
+    <string name="registro_descripcion">Mira las cámaras: toca el género y elige la característica en el popup. En las salidas la app pregunta además si compró.</string>
+    <string name="registro_acceso">Acceso</string>
+    <string name="registro_acceso_ayuda">Piso 1: accesos 1, 2 y 3 · Piso 2: acceso 4</string>
+    <string name="registro_personas_observadas">Personas observadas</string>
+    <string name="registro_detalle_conteo">Detalle del conteo</string>
+    <string name="registro_resumen_compra">Compraron %1$d · No compraron %2$d · Sin dato %3$d</string>
+    <string name="registro_limpiar">Limpiar</string>
+    <string name="registro_guardar">Guardar %1$d</string>
+    <string name="registro_pie">Se guarda un registro por género, característica y compra en SQLite, sin salir de la pantalla.</string>
+    <string name="registro_toca_para_sumar">Toca para sumar</string>
+    <string name="registro_quitar_una">Quitar una</string>
+    <string name="registro_sumar_una">Sumar una</string>
+    <string name="registro_ninos_ayuda">Usa +1 por cada niño</string>
+    <string name="registro_ninos_sumar">+1</string>
+    <string name="registro_guardado">Guardado: %1$d personas · %2$s</string>
+
+    <!-- Popups del registro -->
+    <string name="popup_persona_observada">Persona observada</string>
+    <string name="popup_caracteristica_pregunta">¿Qué característica tiene?</string>
+    <string name="popup_compra_pregunta">¿Compró?</string>
+    <string name="popup_si_compro">Sí, compró</string>
+
+    <!-- Conteos de pórticos -->
+    <string name="porticos_titulo">Conteo de pórticos de hoy</string>
+    <string name="porticos_descripcion">Anota cuántas personas marcó el pórtico de cada acceso. El pórtico solo cuenta tránsitos: no indica si la persona entró o salió, por eso se registra un total por acceso y el dashboard lo compara con todas las entradas y salidas capturadas desde las cámaras.</string>
+    <string name="porticos_campo">Personas que pasaron</string>
+    <string name="porticos_campo_ayuda">Total del día, sin separar entrada/salida</string>
+    <string name="porticos_guardar">Guardar conteos de hoy</string>
+    <string name="porticos_guardado_ok">Conteos de pórticos guardados</string>
+    <string name="porticos_blanco">Deja un acceso en blanco si su pórtico no tiene lectura.</string>
+    <string name="porticos_total">Total: %1$d</string>
+    <string name="porticos_error_sin_conteo">Ingresa al menos un conteo de pórtico</string>
+
+    <!-- Panel de pórticos del dashboard -->
+    <string name="panel_porticos_sin_datos">Sin conteos de pórticos en el periodo. Regístralos en la pestaña Pórticos para ver cuánto del flujo real queda cubierto.</string>
+    <string name="panel_porticos_cobertura">Cobertura: %1$d%% · %2$d registradas de %3$d del pórtico · diferencia %4$d</string>
+    <string name="panel_porticos_fila">Pórtico: %1$d personas · Registrado: %2$d · Diferencia: %3$d</string>
+    <string name="panel_porticos_composicion">Registrado se compone de %1$d entradas y %2$d salidas</string>
+
+    <!-- Perfil de las entradas -->
+    <string name="perfil_titulo">Perfil de las entradas</string>
+    <string name="perfil_ninos_resumen">%1$d niños registrados · %2$d%% de las personas entró con niños</string>
+    <string name="acceso_compra_resumen">%1$d%% de las salidas compró · %2$d niños acompañantes</string>
+
+    <!-- Modo análisis -->
+    <string name="modo_activo_descripcion">Activo: el dashboard y los gráficos muestran género, característica etaria, niños acompañantes, compra en las salidas y el cruce con los pórticos.</string>
+    <string name="modo_inactivo_descripcion">Inactivo: el dashboard muestra solo los totales por acceso. Actívalo para ver el perfil de las entradas y los gráficos del flujo.</string>
+    <string name="modo_ver_graficos">Ver gráficos del flujo</string>
+    <string name="modo_desactivar">Desactivar modo análisis</string>
+    <string name="modo_cambios_sesion">Cambios en esta sesión: %1$d</string>
+    <string name="modo_guardado_ok">¡Estado guardado exitosamente!</string>
+    <string name="modo_incluye_titulo">Qué incluye el análisis</string>
+    <string name="modo_incluye_genero">• Género y característica etaria (joven, adulto, adulto mayor) de las entradas registradas desde las cámaras.</string>
+    <string name="modo_incluye_compra">• Compra declarada en la salida: compró, no compró o sin dato.</string>
+    <string name="modo_incluye_ninos">• Acompañantes niños, que también cuentan para el pórtico.</string>
+    <string name="modo_incluye_porticos">• Comparación con los pórticos de los 4 accesos (3 en piso 1, 1 en piso 2), que solo miden tránsitos.</string>
+
+    <!-- Gráficos del flujo -->
+    <string name="analisis_descripcion">Datos reales capturados desde las cámaras y los pórticos. La compra se registra al salir y el pórtico solo cuenta tránsitos.</string>
+    <string name="analisis_sin_datos_titulo">Sin datos en el periodo</string>
+    <string name="analisis_sin_datos_descripcion">Registra entradas y salidas en Registro rápido, y los conteos de los pórticos en la pestaña Pórticos, para ver los gráficos.</string>
+
+    <string name="grafico_personas_por_acceso">Personas por acceso</string>
+    <string name="grafico_personas_por_acceso_sub">Entradas y salidas registradas · A1–A3 piso 1, A4 piso 2</string>
+    <string name="grafico_acceso_corto">A%1$d</string>
+    <string name="grafico_genero">Género de las entradas</string>
+    <string name="grafico_genero_sub">Personas observadas por el operador de cámaras</string>
+    <string name="grafico_etaria_sub">Joven, adulto y adulto mayor elegidos al contar</string>
+    <string name="grafico_compra_sub">%1$d%% de las salidas con dato compró</string>
+    <string name="grafico_ninos_sub">Los niños también son contados por el pórtico</string>
+    <string name="grafico_ninos_entraron">Niños entraron</string>
+    <string name="grafico_ninos_salieron">Niños salieron</string>
+    <string name="grafico_entraron_con_ninos">Entraron con niños</string>
+    <string name="grafico_ninos_pct">%1$d%% de las personas adultas entró acompañada por al menos un niño</string>
+    <string name="grafico_porticos_sub">El pórtico cuenta tránsitos, sin separar entrada o salida</string>
+    <string name="grafico_porticos_sin_datos">Sin conteos de pórticos en el periodo. Regístralos en la pestaña Pórticos para comparar el flujo real con lo observado en cámaras.</string>
+    <string name="grafico_porticos_resumen">Total: %1$d registradas de %2$d del pórtico · cobertura %3$d%% · diferencia %4$d</string>
+    <string name="grafico_porticos_sin_cobertura">%1$d personas registradas · %2$d en pórticos</string>
+    <string name="grafico_porticos_accesos">Accesos con lectura: %1$d de %2$d</string>
+    <string name="grafico_centro_entradas">entradas</string>
+    <string name="grafico_centro_salidas">salidas</string>
+    <string name="grafico_cobertura_fila">%1$d%% cubierto · diferencia %2$d</string>
+    <string name="grafico_cobertura_valores">%1$d / %2$d</string>
+    <string name="grafico_cobertura_sin_lectura">Sin lectura de pórtico en el periodo</string>
+
+    <!-- Perfil del operador -->
+    <string name="perfil_galeria">Elegir desde galería</string>
+    <string name="perfil_camara">Tomar foto con la cámara</string>
+    <string name="perfil_sin_permiso">Sin permiso de cámara no se puede tomar la foto.</string>
+    <string name="perfil_sin_foto">Sin foto de perfil</string>
+    <string name="perfil_foto">Foto de perfil del operador</string>
 </resources>

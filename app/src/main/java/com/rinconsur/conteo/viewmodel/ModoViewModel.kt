@@ -16,8 +16,9 @@ import kotlinx.coroutines.launch
 
 /**
  * Guía 12: estado persistente con DataStore + feedback animado.
- * "Modo análisis": cuando está activo, el dashboard destaca el perfil por género y edad
- * de las entradas, además de los niños acompañantes.
+ * "Modo análisis": cuando está activo, el dashboard destaca el perfil (género,
+ * característica etaria, niños acompañantes y compra en las salidas) además del
+ * cruce con los pórticos, y desde esta pantalla se abre la vista de gráficos.
  *
  * El estado se observa directamente desde DataStore, así Dashboard y ModoScreen
  * (cada una con su propia instancia del ViewModel) siempre ven el mismo valor.
@@ -35,14 +36,26 @@ class ModoViewModel(application: Application) : AndroidViewModel(application) {
     private val _mostrarMensaje = MutableStateFlow(false)
     val mostrarMensaje: StateFlow<Boolean> = _mostrarMensaje.asStateFlow()
 
-    fun alternarEstado() {
+    /** Activa el modo análisis; devuelve si hubo cambio para animar el aviso. */
+    fun activar() {
+        if (activo.value == true) return
         viewModelScope.launch {
-            val nuevo = !(activo.value ?: false)
-            dataStore.guardarEstado(nuevo) // el flujo de DataStore actualiza 'activo'
-
-            _mostrarMensaje.value = true
-            delay(2_000)
-            _mostrarMensaje.value = false
+            dataStore.guardarEstado(true)
+            mostrarFeedback()
         }
+    }
+
+    fun desactivar() {
+        if (activo.value == false) return
+        viewModelScope.launch {
+            dataStore.guardarEstado(false)
+            mostrarFeedback()
+        }
+    }
+
+    private suspend fun mostrarFeedback() {
+        _mostrarMensaje.value = true
+        delay(2_000)
+        _mostrarMensaje.value = false
     }
 }

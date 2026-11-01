@@ -16,14 +16,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.rinconsur.conteo.R
 import com.rinconsur.conteo.model.Accesos
 import com.rinconsur.conteo.model.CrucePorticos
 import com.rinconsur.conteo.model.ResumenAcceso
-import kotlin.math.roundToInt
+import com.rinconsur.conteo.model.ResumenGeneral
+import com.rinconsur.conteo.ui.utils.comoPorcentaje
+
+private val ANCHO_ETIQUETA_SEGMENTACION = 92.dp
 
 @Composable
-fun DatoNumerico(etiqueta: String, valor: Int, modifier: Modifier = Modifier) {
+internal fun DatoNumerico(etiqueta: String, valor: Int, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(valor.toString(), style = MaterialTheme.typography.headlineMedium)
         Text(etiqueta, style = MaterialTheme.typography.labelMedium)
@@ -32,44 +37,53 @@ fun DatoNumerico(etiqueta: String, valor: Int, modifier: Modifier = Modifier) {
 
 /** Tarjeta por acceso: entradas, salidas, aforo neto y conversión de compra. */
 @Composable
-fun TarjetaAcceso(resumen: ResumenAcceso, modifier: Modifier = Modifier) {
+internal fun TarjetaAcceso(resumen: ResumenAcceso, modifier: Modifier = Modifier) {
     val progreso by animateFloatAsState(targetValue = resumen.pctCompra, label = "pctCompra")
 
     Card(modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(Accesos.etiqueta(resumen.accesoId), style = MaterialTheme.typography.titleMedium)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                DatoNumerico("Entradas", resumen.personasEntradas)
-                DatoNumerico("Salidas", resumen.personasSalidas)
-                DatoNumerico("Aforo neto", resumen.aforoNeto)
+                DatoNumerico(stringResource(R.string.etiqueta_entradas), resumen.personasEntradas)
+                DatoNumerico(stringResource(R.string.etiqueta_salidas), resumen.personasSalidas)
+                DatoNumerico(stringResource(R.string.etiqueta_aforo_neto), resumen.aforoNeto)
             }
             LinearProgressIndicator(progress = { progreso }, modifier = Modifier.fillMaxWidth())
             Text(
-                "${(resumen.pctCompra * 100).roundToInt()}% de las salidas compró · " +
-                    "${resumen.ninosEntradas} niños acompañantes",
+                stringResource(
+                    R.string.acceso_compra_resumen,
+                    resumen.pctCompra.comoPorcentaje(),
+                    resumen.ninosEntradas
+                ),
                 style = MaterialTheme.typography.bodySmall
             )
         }
     }
 }
 
-/** Comparación entre lo que marca el pórtico y lo registrado desde las cámaras. */
+/**
+ * Comparación entre lo que marca el pórtico y lo registrado desde las cámaras. El
+ * pórtico solo cuenta tránsitos, sin separar entrada de salida, así que la
+ * comparación se hace sobre el total de cada acceso.
+ */
 @Composable
-fun PanelCrucePorticos(cruce: CrucePorticos, modifier: Modifier = Modifier) {
+internal fun PanelCrucePorticos(cruce: CrucePorticos, modifier: Modifier = Modifier) {
     Card(modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Pórticos vs. registro", style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(R.string.etiqueta_porticos_vs_registro),
+                style = MaterialTheme.typography.titleMedium
+            )
 
             if (!cruce.hayDatosPortico) {
                 Text(
-                    "Sin conteos de pórticos en el periodo. Regístralos en la pestaña Pórticos " +
-                        "para ver cuánto del flujo real queda cubierto.",
+                    stringResource(R.string.panel_porticos_sin_datos),
                     style = MaterialTheme.typography.bodySmall
                 )
                 return@Column
             }
 
-            val cobertura = cruce.coberturaEntradas
+            val cobertura = cruce.cobertura
             if (cobertura != null) {
                 val progreso by animateFloatAsState(
                     targetValue = cobertura.coerceIn(0f, 1f),
@@ -77,9 +91,13 @@ fun PanelCrucePorticos(cruce: CrucePorticos, modifier: Modifier = Modifier) {
                 )
                 LinearProgressIndicator(progress = { progreso }, modifier = Modifier.fillMaxWidth())
                 Text(
-                    "Cobertura de entradas: ${(cobertura * 100).roundToInt()}% · " +
-                        "${cruce.totalRegistradoEntradas} registradas de " +
-                        "${cruce.totalPorticoEntradas} del pórtico",
+                    stringResource(
+                        R.string.panel_porticos_cobertura,
+                        cobertura.comoPorcentaje(),
+                        cruce.totalRegistrado,
+                        cruce.totalPorticoPersonas,
+                        cruce.diferencia
+                    ),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -88,13 +106,20 @@ fun PanelCrucePorticos(cruce: CrucePorticos, modifier: Modifier = Modifier) {
                 HorizontalDivider()
                 Text(Accesos.etiqueta(fila.accesoId), style = MaterialTheme.typography.labelLarge)
                 Text(
-                    "Entradas: ${fila.registradoEntradas} de ${fila.porticoEntradas} · " +
-                        "diferencia ${fila.diferenciaEntradas}",
+                    stringResource(
+                        R.string.panel_porticos_fila,
+                        fila.porticoPersonas,
+                        fila.registradoTotal,
+                        fila.diferencia
+                    ),
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    "Salidas: ${fila.registradoSalidas} de ${fila.porticoSalidas} · " +
-                        "diferencia ${fila.diferenciaSalidas}",
+                    stringResource(
+                        R.string.panel_porticos_composicion,
+                        fila.registradoEntradas,
+                        fila.registradoSalidas
+                    ),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -102,27 +127,45 @@ fun PanelCrucePorticos(cruce: CrucePorticos, modifier: Modifier = Modifier) {
     }
 }
 
-/** Perfil de las entradas: género, edad y acompañantes niños. */
+/**
+ * Perfil de las entradas (género, característica etaria y acompañantes niños) y
+ * resultado de compra declarado en las salidas.
+ */
 @Composable
-fun PanelSegmentacion(
-    generoEntradas: Map<String, Int>,
-    edadEntradas: Map<String, Int>,
-    totalNinos: Int,
-    pctConNinos: Float,
-    modifier: Modifier = Modifier
-) {
+internal fun PanelSegmentacion(resumen: ResumenGeneral, modifier: Modifier = Modifier) {
     Card(modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Perfil de las entradas", style = MaterialTheme.typography.titleMedium)
-            BarrasSegmentacion("Género", generoEntradas)
-            HorizontalDivider()
-            BarrasSegmentacion("Rango etario", edadEntradas)
-            HorizontalDivider()
-            Text("Acompañantes niños", style = MaterialTheme.typography.titleSmall)
             Text(
-                "$totalNinos niños registrados · " +
-                    "${(pctConNinos * 100).roundToInt()}% de las personas entró con niños",
+                stringResource(R.string.perfil_titulo),
+                style = MaterialTheme.typography.titleMedium
+            )
+            BarrasSegmentacion(stringResource(R.string.etiqueta_genero), resumen.generoEntradas)
+            HorizontalDivider()
+            BarrasSegmentacion(
+                stringResource(R.string.etiqueta_caracteristica_etaria),
+                resumen.edadEntradas
+            )
+            HorizontalDivider()
+            Text(
+                stringResource(R.string.etiqueta_ninos_acompanantes),
+                style = MaterialTheme.typography.titleSmall
+            )
+            Text(
+                stringResource(
+                    R.string.perfil_ninos_resumen,
+                    resumen.totalNinos,
+                    resumen.pctConNinos.comoPorcentaje()
+                ),
                 style = MaterialTheme.typography.bodySmall
+            )
+            HorizontalDivider()
+            BarrasSegmentacion(
+                stringResource(R.string.etiqueta_compra_salidas),
+                linkedMapOf(
+                    stringResource(R.string.etiqueta_compro) to resumen.totalCompradores,
+                    stringResource(R.string.etiqueta_no_compro) to resumen.totalNoCompradores,
+                    stringResource(R.string.etiqueta_sin_dato) to resumen.totalSinDatoCompra
+                )
             )
         }
     }
@@ -141,7 +184,7 @@ private fun BarrasSegmentacion(titulo: String, datos: Map<String, Int>) {
             ) {
                 Text(
                     etiqueta,
-                    Modifier.width(92.dp),
+                    Modifier.width(ANCHO_ETIQUETA_SEGMENTACION),
                     style = MaterialTheme.typography.labelLarge
                 )
                 LinearProgressIndicator(progress = { fraccion }, modifier = Modifier.weight(1f))

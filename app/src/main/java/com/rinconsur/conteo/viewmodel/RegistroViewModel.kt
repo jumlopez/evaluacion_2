@@ -4,10 +4,11 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rinconsur.conteo.RinconApp
+import com.rinconsur.conteo.R
 import com.rinconsur.conteo.model.Accesos
 import com.rinconsur.conteo.model.Genero
+import com.rinconsur.conteo.model.MAX_NINOS_ACOMPANANTES
 import com.rinconsur.conteo.model.Movimiento
-import com.rinconsur.conteo.model.RegistroErrores
 import com.rinconsur.conteo.model.RegistroUiState
 import com.rinconsur.conteo.model.construirRegistros
 import com.rinconsur.conteo.model.validarRegistro
@@ -55,7 +56,7 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
 
     fun agregarNino() = _estado.update {
         it.copy(
-            ninosAcompanantes = (it.ninosAcompanantes + 1).coerceAtMost(20),
+            ninosAcompanantes = (it.ninosAcompanantes + 1).coerceAtMost(MAX_NINOS_ACOMPANANTES),
             errores = it.errores.copy(ninos = null)
         )
     }
@@ -65,13 +66,7 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
     }
 
     /** Limpia el grupo en captura sin cambiar el acceso ni el movimiento. */
-    fun reiniciarConteo() = _estado.update {
-        it.copy(
-            conteo = emptyMap(),
-            ninosAcompanantes = 0,
-            errores = RegistroErrores()
-        )
-    }
+    fun reiniciarConteo() = _estado.update { it.limpiarConteo() }
 
     fun guardar() {
         val actual = _estado.value
@@ -85,15 +80,12 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
         val registros = construirRegistros(actual, System.currentTimeMillis())
         viewModelScope.launch {
             repositorio.guardarTodos(registros)
-            _mensaje.value = "Guardado: ${actual.totalConNinos} personas · " +
+            _mensaje.value = getApplication<Application>().getString(
+                R.string.registro_guardado,
+                actual.totalConNinos,
                 Accesos.etiqueta(actual.accesoId)
-            _estado.update {
-                it.copy(
-                    conteo = emptyMap(),
-                    ninosAcompanantes = 0,
-                    errores = RegistroErrores()
-                )
-            }
+            )
+            _estado.update { it.limpiarConteo() }
         }
     }
 

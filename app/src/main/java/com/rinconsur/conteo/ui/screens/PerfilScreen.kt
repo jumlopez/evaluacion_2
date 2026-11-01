@@ -16,7 +16,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,11 +23,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.rinconsur.conteo.R
 import com.rinconsur.conteo.ui.components.ImagenInteligente
 import com.rinconsur.conteo.viewmodel.PerfilViewModel
+
+private const val TIPO_CONTENIDO_IMAGEN = "image/*"
 
 /** Guía 13: foto de perfil del operador desde galería (GetContent) o cámara (TakePicture). */
 @Composable
@@ -37,8 +41,9 @@ fun PerfilScreen(
     viewModel: PerfilViewModel = viewModel()
 ) {
     val contexto = LocalContext.current
-    val imagenUri by viewModel.imagenUri.collectAsState()
+    val imagenUri by viewModel.imagenUri.collectAsStateWithLifecycle()
     var mensaje by remember { mutableStateOf<String?>(null) }
+    val mensajeSinPermiso = stringResource(R.string.perfil_sin_permiso)
 
     val lanzadorGaleria = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         viewModel.onImagenDeGaleria(uri)
@@ -51,7 +56,7 @@ fun PerfilScreen(
             mensaje = null
             lanzadorCamara.launch(viewModel.crearUriParaCamara())
         } else {
-            mensaje = "Sin permiso de cámara no se puede tomar la foto."
+            mensaje = mensajeSinPermiso
         }
     }
 
@@ -67,18 +72,24 @@ fun PerfilScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Perfil del operador", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            stringResource(R.string.pantalla_perfil),
+            style = MaterialTheme.typography.headlineSmall
+        )
         Spacer(Modifier.height(24.dp))
 
         ImagenInteligente(uri = imagenUri)
 
         Spacer(Modifier.height(24.dp))
-        Button(onClick = { lanzadorGaleria.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Elegir desde galería")
+        Button(
+            onClick = { lanzadorGaleria.launch(TIPO_CONTENIDO_IMAGEN) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.perfil_galeria))
         }
         Spacer(Modifier.height(8.dp))
         OutlinedButton(onClick = { abrirCamara() }, modifier = Modifier.fillMaxWidth()) {
-            Text("Tomar foto con la cámara")
+            Text(stringResource(R.string.perfil_camara))
         }
 
         mensaje?.let {

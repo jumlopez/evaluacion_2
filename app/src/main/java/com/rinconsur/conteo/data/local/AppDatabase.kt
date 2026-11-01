@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.rinconsur.conteo.model.ConteoPortico
 import com.rinconsur.conteo.model.RegistroFlujo
 
-@Database(entities = [RegistroFlujo::class, ConteoPortico::class], version = 3, exportSchema = false)
+@Database(entities = [RegistroFlujo::class, ConteoPortico::class], version = 4, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun registroDao(): RegistroDao
@@ -79,13 +79,48 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Los pórticos solo entregan personas que transitan, sin separar entrada de
+         * salida: las lecturas antiguas se consolidan en un único total por acceso.
+         */
+        private val migracion3a4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `conteos_portico_nuevo` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `accesoId` INTEGER NOT NULL,
+                        `fechaMillis` INTEGER NOT NULL,
+                        `personas` INTEGER NOT NULL,
+                        `actualizadoEn` INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    INSERT INTO `conteos_portico_nuevo`
+                        (`id`, `accesoId`, `fechaMillis`, `personas`, `actualizadoEn`)
+                    SELECT `id`, `accesoId`, `fechaMillis`, `entradas` + `salidas`, `actualizadoEn`
+                    FROM `conteos_portico`
+                    """.trimIndent()
+                )
+                db.execSQL("DROP TABLE `conteos_portico`")
+                db.execSQL("ALTER TABLE `conteos_portico_nuevo` RENAME TO `conteos_portico`")
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                        "`index_conteos_portico_accesoId_fechaMillis` " +
+                        "ON `conteos_portico` (`accesoId`, `fechaMillis`)"
+                )
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase =
             instancia ?: synchronized(this) {
                 instancia ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "rincon_flujo.db"
-                ).addMigrations(migracion1a2, migracion2a3)
+                ).addMigrations(migracion1a2, migracion2a3, migracion3a4)
                     .build()
                     .also { instancia = it }
             }
