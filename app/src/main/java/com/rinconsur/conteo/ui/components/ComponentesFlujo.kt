@@ -108,16 +108,10 @@ fun PanelCrucePorticos(cruce: CrucePorticos, modifier: Modifier = Modifier) {
             cruce.filas.forEach { fila ->
                 HorizontalDivider()
                 Text(Accesos.etiqueta(fila.accesoId), style = MaterialTheme.typography.labelLarge)
-                Text(
-                    "Entradas: ${fila.registradoEntradas} de ${fila.porticoEntradas} · " +
-                        "diferencia ${fila.diferenciaEntradas}",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    "Salidas: ${fila.registradoSalidas} de ${fila.porticoSalidas} · " +
-                        "diferencia ${fila.diferenciaSalidas}",
-                    style = MaterialTheme.typography.bodySmall
-                )
+                listOf(
+                    "Entradas: ${fila.registradoEntradas} de ${fila.porticoEntradas} · diferencia ${fila.diferenciaEntradas}",
+                    "Salidas: ${fila.registradoSalidas} de ${fila.porticoSalidas} · diferencia ${fila.diferenciaSalidas}"
+                ).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
             }
         }
     }

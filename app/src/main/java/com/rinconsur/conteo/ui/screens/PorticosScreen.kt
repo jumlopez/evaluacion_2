@@ -79,22 +79,19 @@ fun PorticosScreen(
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(Accesos.etiqueta(fila.accesoId), style = MaterialTheme.typography.titleSmall)
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            OutlinedTextField(
-                                value = fila.entradas,
-                                onValueChange = { viewModel.onEntradasChange(fila.accesoId, it) },
-                                label = { Text("Entradas") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true,
-                                modifier = Modifier.weight(1f)
-                            )
-                            OutlinedTextField(
-                                value = fila.salidas,
-                                onValueChange = { viewModel.onSalidasChange(fila.accesoId, it) },
-                                label = { Text("Salidas") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true,
-                                modifier = Modifier.weight(1f)
-                            )
+                            listOf(
+                                Triple("Entradas", fila.entradas, viewModel::onEntradasChange),
+                                Triple("Salidas", fila.salidas, viewModel::onSalidasChange)
+                            ).forEach { (etiqueta, valor, onCambio) ->
+                                OutlinedTextField(
+                                    value = valor,
+                                    onValueChange = { onCambio(fila.accesoId, it) },
+                                    label = { Text(etiqueta) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                     }
                 }
