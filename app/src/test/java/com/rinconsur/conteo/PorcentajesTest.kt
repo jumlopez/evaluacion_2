@@ -1,6 +1,6 @@
 package com.rinconsur.conteo
 
-import com.rinconsur.conteo.ui.utils.comoPorcentaje
+import com.rinconsur.conteo.ui.comoPorcentaje
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

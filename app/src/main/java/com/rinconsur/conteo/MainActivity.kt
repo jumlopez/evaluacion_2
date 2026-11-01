@@ -4,8 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.rinconsur.conteo.navigation.AppNavigation
-import com.rinconsur.conteo.ui.theme.AppRinconTheme
+import com.rinconsur.conteo.ui.AppNavigation
+import com.rinconsur.conteo.ui.AppRinconTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

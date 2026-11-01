@@ -13,8 +13,7 @@ data class ResumenAcceso(
 ) {
     /**
      * Aforo neto del acceso: personas que entraron menos las que salieron. Nunca es
-     * negativo: si las salidas superan a las entradas (registros de días anteriores o
-     * conteos incompletos) el aforo se informa como 0.
+     * negativo: si las salidas superan a las entradas el aforo se informa como 0.
      */
     val aforoNeto: Int get() = (personasEntradas - personasSalidas).coerceAtLeast(0)
 
@@ -31,6 +30,7 @@ data class ResumenGeneral(
 ) {
     val totalPersonasEntradas: Int get() = porAcceso.sumOf { it.personasEntradas }
     val totalPersonasSalidas: Int get() = porAcceso.sumOf { it.personasSalidas }
+
     /** Aforo neto de la tienda; nunca negativo, igual que en cada acceso. */
     val aforoNeto: Int get() = (totalPersonasEntradas - totalPersonasSalidas).coerceAtLeast(0)
     val totalCompradores: Int get() = porAcceso.sumOf { it.compradores }
@@ -55,10 +55,10 @@ data class ResumenGeneral(
 }
 
 /**
- * Calcula el resumen por acceso, la conversión de compra y la segmentación
- * (género y edad) de las entradas. La compra se registra en la salida, cuando ya se
- * sabe si la persona compró. Las personas incluyen a los niños acompañantes porque
- * el pórtico también los cuenta.
+ * Calcula el resumen por acceso, la conversión de compra y la segmentación (género y
+ * característica etaria) de las entradas. La compra se registra en la salida, cuando
+ * ya se sabe si la persona compró. Las personas incluyen a los niños acompañantes
+ * porque el pórtico también los cuenta.
  */
 fun calcularResumen(registros: List<RegistroFlujo>): ResumenGeneral {
     val entradas = registros.filter { it.movimiento == Movimiento.ENTRADA.name }
@@ -94,4 +94,63 @@ fun calcularResumen(registros: List<RegistroFlujo>): ResumenGeneral {
     val personasConNinos = entradas.filter { it.ninosAcompanantes > 0 }.sumOf { it.cantidad }
 
     return ResumenGeneral(porAcceso, porGenero, porEdad, personasConNinos)
+}
+
+data class FilaCruce(
+    val accesoId: Int,
+    val porticoPersonas: Int,
+    val registradoEntradas: Int,
+    val registradoSalidas: Int
+) {
+    /** Personas registradas en el acceso, sin separar entrada de salida. */
+    val registradoTotal: Int get() = registradoEntradas + registradoSalidas
+
+    /** Personas del pórtico que el operador no alcanzó a caracterizar. */
+    val diferencia: Int get() = porticoPersonas - registradoTotal
+
+    /** Proporción (0..1) del flujo del pórtico que quedó caracterizada. */
+    val cobertura: Float?
+        get() = if (porticoPersonas > 0) registradoTotal.toFloat() / porticoPersonas else null
+}
+
+data class CrucePorticos(val filas: List<FilaCruce>) {
+    val totalPorticoPersonas: Int get() = filas.sumOf { it.porticoPersonas }
+    val totalRegistrado: Int get() = filas.sumOf { it.registradoTotal }
+
+    val hayDatosPortico: Boolean get() = filas.any { it.porticoPersonas > 0 }
+
+    /** Diferencia total entre lo que marcaron los pórticos y lo registrado. */
+    val diferencia: Int get() = totalPorticoPersonas - totalRegistrado
+
+    val cobertura: Float?
+        get() = if (totalPorticoPersonas > 0) {
+            totalRegistrado.toFloat() / totalPorticoPersonas
+        } else {
+            null
+        }
+
+    companion object {
+        fun vacio(): CrucePorticos = CrucePorticos(Accesos.ids.map { FilaCruce(it, 0, 0, 0) })
+    }
+}
+
+/**
+ * Cruza el conteo de pórticos con las personas registradas en la app, acceso por
+ * acceso. Los niños acompañantes suman porque el pórtico también los cuenta.
+ */
+fun calcularCruce(
+    registros: List<RegistroFlujo>,
+    porticos: List<ConteoPortico>
+): CrucePorticos {
+    val resumen = calcularResumen(registros)
+    val filas = resumen.porAcceso.map { acceso ->
+        FilaCruce(
+            accesoId = acceso.accesoId,
+            porticoPersonas = porticos.filter { it.accesoId == acceso.accesoId }
+                .sumOf { it.personas },
+            registradoEntradas = acceso.personasEntradas,
+            registradoSalidas = acceso.personasSalidas
+        )
+    }
+    return CrucePorticos(filas)
 }
