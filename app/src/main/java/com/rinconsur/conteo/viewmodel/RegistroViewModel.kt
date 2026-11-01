@@ -28,6 +28,9 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
     private val _mensaje = MutableStateFlow<String?>(null)
     val mensaje: StateFlow<String?> = _mensaje.asStateFlow()
 
+    /** Evita filas duplicadas por doble toque mientras se inserta. */
+    private var guardando = false
+
     fun onAccesoChange(id: Int) = _estado.update {
         it.copy(accesoId = id, errores = it.errores.copy(acceso = null))
     }
@@ -71,6 +74,7 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun guardar() {
+        if (guardando) return
         val actual = _estado.value
         val errores = validarRegistro(actual)
         if (errores.hayErrores()) {
@@ -80,11 +84,16 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
         }
 
         val registros = construirRegistros(actual, System.currentTimeMillis())
+        guardando = true
         viewModelScope.launch {
-            repositorio.guardarTodos(registros)
-            _mensaje.value = "Guardado: ${actual.totalConNinos} personas · " +
-                Accesos.etiqueta(actual.accesoId)
-            reiniciarConteo()
+            try {
+                repositorio.guardarTodos(registros)
+                _mensaje.value = "Guardado: ${actual.totalConNinos} personas · " +
+                    Accesos.etiqueta(actual.accesoId)
+                reiniciarConteo()
+            } finally {
+                guardando = false
+            }
         }
     }
 
