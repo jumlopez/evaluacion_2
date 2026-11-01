@@ -260,12 +260,12 @@ private fun BotonGenero(
                 IconButton(
                     onClick = onQuitar,
                     enabled = cantidad > 0,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(Icons.Filled.Remove, "Quitar una", Modifier.size(18.dp))
                 }
                 Text("$cantidad", style = MaterialTheme.typography.headlineSmall)
-                IconButton(onClick = onAgregar, modifier = Modifier.size(32.dp)) {
+                IconButton(onClick = onAgregar, modifier = Modifier.size(48.dp)) {
                     Icon(Icons.Filled.Add, "Sumar una", Modifier.size(18.dp))
                 }
             }
