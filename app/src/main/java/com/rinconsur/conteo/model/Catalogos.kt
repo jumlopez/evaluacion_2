@@ -19,7 +19,8 @@ val generosCapturables = listOf(Genero.FEMENINO, Genero.MASCULINO)
 
 /**
  * Características etarias que el operador elige al contar cada persona.
- * Se mantienen los valores antiguos solo como datos históricos en la base.
+ * Los rangos de edad de versiones anteriores ("<18", "18-29", "30-44", "45-59",
+ * "60+") ya no se muestran: se agrupan en estas tres características.
  */
 object RangosEtarios {
     const val JOVEN = "Joven"
@@ -27,6 +28,23 @@ object RangosEtarios {
     const val ADULTO_MAYOR = "Adulto mayor"
 
     val opciones = listOf(JOVEN, ADULTO, ADULTO_MAYOR)
+
+    /** Equivalencia de los rangos de edad guardados por versiones anteriores. */
+    private val equivalencias = mapOf(
+        "<18" to JOVEN,
+        "18-29" to JOVEN,
+        "30-44" to ADULTO,
+        "45-59" to ADULTO,
+        "60+" to ADULTO_MAYOR
+    )
+
+    /**
+     * Lleva cualquier valor guardado a una de las tres características actuales.
+     * Devuelve null cuando el registro histórico no permite clasificarlo
+     * (por ejemplo el antiguo "No declara").
+     */
+    fun normalizar(valor: String): String? =
+        if (valor in opciones) valor else equivalencias[valor]
 }
 
 data class Acceso(val id: Int, val piso: Int, val nombre: String)

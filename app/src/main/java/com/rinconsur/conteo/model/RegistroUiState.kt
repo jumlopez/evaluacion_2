@@ -1,37 +1,5 @@
 package com.rinconsur.conteo.model
 
-/**
- * Combinación que el operador cuenta: género observado, característica etaria y, en
- * las salidas, si la persona compró (null = sin dato). En las entradas `compro`
- * siempre es null porque todavía no se sabe.
- */
-data class GrupoConteo(
-    val genero: Genero,
-    val rango: String,
-    val compro: Boolean? = null
-) {
-    /** Etiqueta corta para el detalle del conteo. */
-    val descripcion: String
-        get() = buildString {
-            append(genero.etiqueta)
-            append(" · ")
-            append(rango)
-            if (compro != null) {
-                append(" · ")
-                append(if (compro) "Compró" else "No compró")
-            }
-        }
-}
-
-/** Errores de validación del registro rápido. */
-data class RegistroErrores(
-    val acceso: String? = null,
-    val conteo: String? = null,
-    val ninos: String? = null
-) {
-    fun hayErrores(): Boolean = listOfNotNull(acceso, conteo, ninos).isNotEmpty()
-}
-
 /** Variantes de compra que se manejan para el movimiento actual. */
 fun opcionesCompra(movimiento: Movimiento): List<Boolean?> =
     if (movimiento == Movimiento.SALIDA) listOf(true, false, null) else listOf(null)
@@ -86,6 +54,13 @@ data class RegistroUiState(
         .groupBy({ it.key.copy(compro = null) }) { it.value }
         .mapValues { (_, cantidades) -> cantidades.sum() }
 
+    /** Deja el grupo en captura vacío sin cambiar el acceso ni el movimiento. */
+    fun limpiarConteo(): RegistroUiState = copy(
+        conteo = emptyMap(),
+        ninosAcompanantes = 0,
+        errores = RegistroErrores()
+    )
+
     /** Grupos con al menos una persona, en el orden del catálogo. */
     val gruposRegistrados: List<Pair<GrupoConteo, Int>>
         get() = generosCapturables.flatMap { genero ->
@@ -97,17 +72,6 @@ data class RegistroUiState(
             }
         }
 }
-
-/** Validación pura (sin Android) para poder probarla con tests unitarios. */
-fun validarRegistro(estado: RegistroUiState): RegistroErrores = RegistroErrores(
-    acceso = if (estado.accesoId in Accesos.ids) null else "Selecciona un acceso",
-    conteo = when {
-        estado.totalPersonas == 0 -> "Registra al menos una persona"
-        estado.totalPersonas > 500 -> "Máximo 500 personas por registro"
-        else -> null
-    },
-    ninos = if (estado.ninosAcompanantes !in 0..20) "Debe estar entre 0 y 20" else null
-)
 
 /**
  * Convierte el estado en los registros que se guardan en Room. Se crea un registro

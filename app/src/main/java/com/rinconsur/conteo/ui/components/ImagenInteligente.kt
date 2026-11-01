@@ -14,13 +14,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.rinconsur.conteo.R
 
 /** Guía 13: imagen circular reutilizable; muestra un ícono de perfil si no hay imagen. */
 @Composable
-fun ImagenInteligente(
+internal fun ImagenInteligente(
     uri: Uri?,
     modifier: Modifier = Modifier,
     tamano: Dp = 160.dp
@@ -35,7 +37,7 @@ fun ImagenInteligente(
         ) {
             Icon(
                 imageVector = Icons.Default.Person,
-                contentDescription = "Sin foto de perfil",
+                contentDescription = stringResource(R.string.perfil_sin_foto),
                 modifier = Modifier.size(tamano / 2),
                 tint = MaterialTheme.colorScheme.onSecondaryContainer
             )
@@ -43,7 +45,7 @@ fun ImagenInteligente(
     } else {
         AsyncImage(
             model = uri,
-            contentDescription = "Foto de perfil del operador",
+            contentDescription = stringResource(R.string.perfil_foto),
             contentScale = ContentScale.Crop,
             modifier = modifier
                 .size(tamano)

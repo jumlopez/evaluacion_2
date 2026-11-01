@@ -22,8 +22,6 @@ class FlujoRepository(
     fun observarPorticos(periodo: Periodo): Flow<List<ConteoPortico>> =
         conteoPorticoDao.observarDesde(periodo.desdeMillis())
 
-    suspend fun guardar(registro: RegistroFlujo): Long = registroDao.insertar(registro)
-
     suspend fun guardarTodos(registros: List<RegistroFlujo>) = registroDao.insertarTodos(registros)
 
     suspend fun porticosDelDia(dia: Long): List<ConteoPortico> = conteoPorticoDao.obtenerDia(dia)

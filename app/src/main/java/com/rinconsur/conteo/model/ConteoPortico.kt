@@ -5,8 +5,9 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * Lectura diaria de los pórticos de cada acceso. Se guarda una fila por acceso y día,
- * con las entradas y salidas que marca el pórtico.
+ * Lectura diaria del pórtico de un acceso. Los pórticos solo cuentan personas que
+ * transitan: no distinguen si la persona entró o salió, por eso se guarda un único
+ * total por acceso y día.
  */
 @Entity(
     tableName = "conteos_portico",
@@ -16,7 +17,6 @@ data class ConteoPortico(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val accesoId: Int,
     val fechaMillis: Long,
-    val entradas: Int,
-    val salidas: Int,
+    val personas: Int,
     val actualizadoEn: Long
 )

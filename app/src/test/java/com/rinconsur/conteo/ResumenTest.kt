@@ -54,6 +54,23 @@ class ResumenTest {
     }
 
     @Test
+    fun `el aforo neto nunca es negativo`() {
+        val resumen = calcularResumen(
+            listOf(
+                reg(1, cantidad = 4),
+                reg(1, Movimiento.SALIDA, cantidad = 30, compro = false),
+                reg(2, Movimiento.SALIDA, cantidad = 7, compro = true)
+            )
+        )
+        val a1 = resumen.porAcceso.first { it.accesoId == 1 }
+        assertEquals(4, a1.personasEntradas)
+        assertEquals(30, a1.personasSalidas)
+        assertEquals(0, a1.aforoNeto)
+        assertEquals(0, resumen.porAcceso.first { it.accesoId == 2 }.aforoNeto)
+        assertEquals(0, resumen.aforoNeto)
+    }
+
+    @Test
     fun `siempre devuelve los cuatro accesos aunque no haya datos`() {
         val resumen = calcularResumen(emptyList())
         assertEquals(4, resumen.porAcceso.size)
@@ -83,9 +100,34 @@ class ResumenTest {
     }
 
     @Test
-    fun `las etiquetas antiguas de edad se siguen mostrando`() {
-        val resumen = calcularResumen(listOf(reg(1, rango = "18-29", cantidad = 4)))
-        assertEquals(4, resumen.edadEntradas.getValue("18-29"))
+    fun `los rangos de edad antiguos se agrupan en la caracteristica etaria`() {
+        val resumen = calcularResumen(
+            listOf(
+                reg(1, rango = "<18", cantidad = 2),
+                reg(1, rango = "18-29", cantidad = 4),
+                reg(1, rango = "30-44", cantidad = 3),
+                reg(1, rango = "45-59", cantidad = 1),
+                reg(1, rango = "60+", cantidad = 5)
+            )
+        )
+        assertEquals(listOf("Joven", "Adulto", "Adulto mayor"), resumen.edadEntradas.keys.toList())
+        assertEquals(6, resumen.edadEntradas.getValue(RangosEtarios.JOVEN))
+        assertEquals(4, resumen.edadEntradas.getValue(RangosEtarios.ADULTO))
+        assertEquals(5, resumen.edadEntradas.getValue(RangosEtarios.ADULTO_MAYOR))
+    }
+
+    @Test
+    fun `las etiquetas antiguas de edad ya no se muestran`() {
+        val resumen = calcularResumen(
+            listOf(
+                reg(1, rango = "18-29", cantidad = 4),
+                reg(1, rango = "No declara", cantidad = 3)
+            )
+        )
+        assertTrue("18-29" !in resumen.edadEntradas)
+        assertTrue("No declara" !in resumen.edadEntradas)
+        assertEquals(4, resumen.edadEntradas.getValue(RangosEtarios.JOVEN))
+        assertEquals(3, resumen.edadEntradas.size)
     }
 
     @Test
@@ -117,7 +159,25 @@ class ResumenTest {
         )
         assertEquals(10, resumen.totalPersonasSalidas)
         assertEquals(4, resumen.totalConDatoCompra)
+        assertEquals(0, resumen.totalNoCompradores)
+        assertEquals(6, resumen.totalSinDatoCompra)
         assertEquals(1f, resumen.pctCompra, 0.001f)
+    }
+
+    @Test
+    fun `separa compradores no compradores y salidas sin dato`() {
+        val resumen = calcularResumen(
+            listOf(
+                reg(1, Movimiento.SALIDA, cantidad = 7, compro = true),
+                reg(1, Movimiento.SALIDA, cantidad = 3, compro = false),
+                reg(2, Movimiento.SALIDA, cantidad = 5, compro = null)
+            )
+        )
+        assertEquals(7, resumen.totalCompradores)
+        assertEquals(3, resumen.totalNoCompradores)
+        assertEquals(10, resumen.totalConDatoCompra)
+        assertEquals(5, resumen.totalSinDatoCompra)
+        assertEquals(15, resumen.totalPersonasSalidas)
     }
 
     @Test
