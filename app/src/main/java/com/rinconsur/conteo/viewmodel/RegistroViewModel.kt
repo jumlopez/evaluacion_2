@@ -16,10 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * Captura rápida: cada toque en un género suma una persona y se guarda de inmediato
- * en Room/SQLite. No hay paso de confirmación para no frenar al operador.
- */
+/** Captura rápida: cada toque suma una persona por género; "Guardar" lo persiste en Room/SQLite. */
 class RegistroViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repositorio = (application as RinconApp).repositorio
