@@ -24,7 +24,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -49,9 +48,9 @@ fun ModoScreen(
         derivedStateOf { if (estaActivo) "Desactivar modo análisis" else "Activar modo análisis" }
     }
 
-    // Color animado según el estado
+    // Color animado según el estado (colores del tema: contraste AA en claro y oscuro)
     val colorAnimado by animateColorAsState(
-        targetValue = if (estaActivo) Color(0xFF4CAF50) else Color(0xFFB0BEC5),
+        targetValue = if (estaActivo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
         animationSpec = tween(durationMillis = 500),
         label = "colorModo"
     )
@@ -91,7 +90,7 @@ fun ModoScreen(
         AnimatedVisibility(visible = mostrarMensaje) {
             Text(
                 "¡Estado guardado exitosamente!",
-                color = Color(0xFF2E7D32),
+                color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.bodyLarge
             )
         }
