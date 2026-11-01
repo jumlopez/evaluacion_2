@@ -17,21 +17,40 @@ class PerfilViewModel(application: Application) : AndroidViewModel(application) 
 
     private var uriPendienteCamara: Uri? = null
 
+    // Temporales de cámara: el pendiente y el que se muestra; se borran cuando dejan de usarse.
+    private var archivoPendiente: File? = null
+    private var archivoMostrado: File? = null
+
     /** Crea el archivo temporal (FileProvider) donde la cámara dejará la foto. */
     fun crearUriParaCamara(): Uri {
         val contexto = getApplication<Application>()
         val carpeta = File(contexto.cacheDir, "images").apply { mkdirs() }
-        val archivo = File.createTempFile("perfil_", ".jpg", carpeta)
+        val archivo = File.createTempFile("perfil_", ".jpg", carpeta).also { archivoPendiente = it }
         return FileProvider.getUriForFile(contexto, "${contexto.packageName}.fileprovider", archivo)
             .also { uriPendienteCamara = it }
     }
 
     fun onImagenDeGaleria(uri: Uri?) {
-        if (uri != null) _imagenUri.value = uri // si el usuario cancela, uri == null y no pasa nada
+        if (uri == null) return // si el usuario cancela, no pasa nada
+        _imagenUri.value = uri
+        archivoMostrado?.delete()
+        archivoMostrado = null
     }
 
     fun onFotoCapturada(exito: Boolean) {
-        if (exito) _imagenUri.value = uriPendienteCamara
-        uriPendienteCamara = null // si se cancela, se conserva la imagen anterior
+        if (exito) {
+            _imagenUri.value = uriPendienteCamara
+            archivoMostrado?.delete()
+            archivoMostrado = archivoPendiente
+        } else {
+            archivoPendiente?.delete() // si se cancela, se conserva la imagen anterior
+        }
+        uriPendienteCamara = null
+        archivoPendiente = null
+    }
+
+    override fun onCleared() {
+        archivoPendiente?.delete()
+        archivoMostrado?.delete()
     }
 }
