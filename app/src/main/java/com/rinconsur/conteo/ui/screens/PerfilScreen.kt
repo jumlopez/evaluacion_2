@@ -1,6 +1,7 @@
 package com.rinconsur.conteo.ui.screens
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -46,10 +47,20 @@ fun PerfilScreen(
     val lanzadorCamara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { exito ->
         viewModel.onFotoCapturada(exito)
     }
+
+    fun lanzarCamara() {
+        try {
+            lanzadorCamara.launch(viewModel.crearUriParaCamara())
+        } catch (e: ActivityNotFoundException) {
+            viewModel.onFotoCapturada(false)
+            mensaje = "No hay una app de cámara disponible."
+        }
+    }
+
     val lanzadorPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
         if (concedido) {
             mensaje = null
-            lanzadorCamara.launch(viewModel.crearUriParaCamara())
+            lanzarCamara()
         } else {
             mensaje = "Sin permiso de cámara no se puede tomar la foto."
         }
@@ -58,7 +69,7 @@ fun PerfilScreen(
     fun abrirCamara() {
         val tienePermiso = ContextCompat.checkSelfPermission(contexto, Manifest.permission.CAMERA) ==
             PackageManager.PERMISSION_GRANTED
-        if (tienePermiso) lanzadorCamara.launch(viewModel.crearUriParaCamara())
+        if (tienePermiso) lanzarCamara()
         else lanzadorPermiso.launch(Manifest.permission.CAMERA)
     }
 
