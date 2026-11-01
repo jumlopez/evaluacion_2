@@ -1,20 +1,21 @@
 package com.rinconsur.conteo.model
 
+/** Proporción 0..1 de `parte` sobre `total`; 0 cuando no hay total. */
+private fun proporcion(parte: Int, total: Int): Float = if (total == 0) 0f else parte.toFloat() / total
+
 data class ResumenAcceso(
     val accesoId: Int,
     val personasEntradas: Int,
     val personasSalidas: Int,
     val compradores: Int,
     val entradasConDatoCompra: Int,
-    val ninosEntradas: Int,
-    val ninosSalidas: Int
+    val ninosEntradas: Int
 ) {
     /** Aforo neto del acceso: personas que entraron menos las que salieron. */
     val aforoNeto: Int get() = personasEntradas - personasSalidas
 
     /** Proporción (0..1) de las entradas con dato de compra que terminó comprando. */
-    val pctCompra: Float
-        get() = if (entradasConDatoCompra == 0) 0f else compradores.toFloat() / entradasConDatoCompra
+    val pctCompra: Float get() = proporcion(compradores, entradasConDatoCompra)
 }
 
 data class ResumenGeneral(
@@ -29,18 +30,15 @@ data class ResumenGeneral(
     val totalCompradores: Int get() = porAcceso.sumOf { it.compradores }
     val totalConDatoCompra: Int get() = porAcceso.sumOf { it.entradasConDatoCompra }
     val totalNinos: Int get() = porAcceso.sumOf { it.ninosEntradas }
-    val totalNinosSalidas: Int get() = porAcceso.sumOf { it.ninosSalidas }
 
     /** Personas adultas que entraron (las que puede observar el operador de cámaras). */
     val totalAdultosEntradas: Int get() = (totalPersonasEntradas - totalNinos).coerceAtLeast(0)
 
     /** Conversión: compradores sobre entradas con dato de compra. */
-    val pctCompra: Float
-        get() = if (totalConDatoCompra == 0) 0f else totalCompradores.toFloat() / totalConDatoCompra
+    val pctCompra: Float get() = proporcion(totalCompradores, totalConDatoCompra)
 
     /** Proporción de personas adultas que entraron acompañadas por al menos un niño. */
-    val pctConNinos: Float
-        get() = if (totalAdultosEntradas == 0) 0f else personasConNinos.toFloat() / totalAdultosEntradas
+    val pctConNinos: Float get() = proporcion(personasConNinos, totalAdultosEntradas)
 
     val sinDatos: Boolean get() = totalPersonasEntradas == 0 && totalPersonasSalidas == 0
 }
@@ -63,8 +61,7 @@ fun calcularResumen(registros: List<RegistroFlujo>): ResumenGeneral {
             personasSalidas = salidasAcceso.sumOf { it.cantidad + it.ninosAcompanantes },
             compradores = entradasAcceso.filter { it.compro == true }.sumOf { it.cantidad },
             entradasConDatoCompra = entradasAcceso.filter { it.compro != null }.sumOf { it.cantidad },
-            ninosEntradas = entradasAcceso.sumOf { it.ninosAcompanantes },
-            ninosSalidas = salidasAcceso.sumOf { it.ninosAcompanantes }
+            ninosEntradas = entradasAcceso.sumOf { it.ninosAcompanantes }
         )
     }
 

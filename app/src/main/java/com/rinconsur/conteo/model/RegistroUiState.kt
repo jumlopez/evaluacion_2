@@ -56,8 +56,6 @@ fun construirRegistros(estado: RegistroUiState, fechaHora: Long): List<RegistroF
         val cantidad = estado.cantidad(genero)
         if (cantidad > 0) genero to cantidad else null
     }
-    if (grupos.isEmpty()) return emptyList()
-
     val compro = if (estado.movimiento == Movimiento.ENTRADA) estado.compro else null
     return grupos.mapIndexed { indice, (genero, cantidad) ->
         RegistroFlujo(

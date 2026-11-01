@@ -7,8 +7,6 @@ import com.rinconsur.conteo.RinconApp
 import com.rinconsur.conteo.model.Accesos
 import com.rinconsur.conteo.model.Genero
 import com.rinconsur.conteo.model.Movimiento
-import com.rinconsur.conteo.model.RangosEtarios
-import com.rinconsur.conteo.model.RegistroErrores
 import com.rinconsur.conteo.model.RegistroUiState
 import com.rinconsur.conteo.model.construirRegistros
 import com.rinconsur.conteo.model.validarRegistro
@@ -18,10 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * Captura rápida: cada toque en un género suma una persona y se guarda de inmediato
- * en Room/SQLite. No hay paso de confirmación para no frenar al operador.
- */
+/** Captura rápida: cada toque suma una persona por género; "Guardar" lo persiste en Room/SQLite. */
 class RegistroViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repositorio = (application as RinconApp).repositorio
@@ -32,6 +27,9 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
     /** Mensaje de confirmación del último guardado (se consume desde la UI). */
     private val _mensaje = MutableStateFlow<String?>(null)
     val mensaje: StateFlow<String?> = _mensaje.asStateFlow()
+
+    /** Evita filas duplicadas por doble toque mientras se inserta. */
+    private var guardando = false
 
     fun onAccesoChange(id: Int) = _estado.update {
         it.copy(accesoId = id, errores = it.errores.copy(acceso = null))
@@ -72,16 +70,11 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
 
     /** Limpia el grupo en captura sin cambiar el acceso ni el movimiento. */
     fun reiniciarConteo() = _estado.update {
-        it.copy(
-            conteoPorGenero = Genero.entries.associateWith { 0 },
-            ninosAcompanantes = 0,
-            rangoEtario = RangosEtarios.NO_DECLARA,
-            compro = null,
-            errores = RegistroErrores()
-        )
+        RegistroUiState(accesoId = it.accesoId, movimiento = it.movimiento)
     }
 
     fun guardar() {
+        if (guardando) return
         val actual = _estado.value
         val errores = validarRegistro(actual)
         if (errores.hayErrores()) {
@@ -91,23 +84,18 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
         }
 
         val registros = construirRegistros(actual, System.currentTimeMillis())
+        guardando = true
         viewModelScope.launch {
-            repositorio.guardarTodos(registros)
-            _mensaje.value = "Guardado: ${actual.totalConNinos} personas · " +
-                Accesos.etiqueta(actual.accesoId)
-            _estado.update {
-                it.copy(
-                    conteoPorGenero = Genero.entries.associateWith { 0 },
-                    ninosAcompanantes = 0,
-                    rangoEtario = RangosEtarios.NO_DECLARA,
-                    compro = null,
-                    errores = RegistroErrores()
-                )
+            try {
+                repositorio.guardarTodos(registros)
+                _mensaje.value = "Guardado: ${actual.totalConNinos} personas · " +
+                    Accesos.etiqueta(actual.accesoId)
+                reiniciarConteo()
+            } finally {
+                guardando = false
             }
         }
     }
 
-    fun consumirMensaje() {
-        _mensaje.value = null
-    }
+    fun consumirMensaje() { _mensaje.value = null }
 }

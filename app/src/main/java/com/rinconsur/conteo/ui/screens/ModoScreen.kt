@@ -5,7 +5,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,11 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -27,9 +24,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.rinconsur.conteo.ui.components.Cargando
 import com.rinconsur.conteo.viewmodel.ModoViewModel
 
 /** Guía 12: estado persistente (DataStore), loader inicial y feedback animado. */
@@ -38,15 +36,9 @@ fun ModoScreen(
     modifier: Modifier = Modifier,
     viewModel: ModoViewModel = viewModel()
 ) {
-    val activo by viewModel.activo.collectAsState()
-    val mostrarMensaje by viewModel.mostrarMensaje.collectAsState()
-
-    val estaActivo = activo
-    if (estaActivo == null) {
-        // Simulación de carga inicial
-        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-        return
-    }
+    val mostrarMensaje by viewModel.mostrarMensaje.collectAsStateWithLifecycle()
+    // null = simulación de carga inicial
+    val estaActivo = viewModel.activo.collectAsStateWithLifecycle().value ?: return Cargando(modifier)
 
     // Estado local que sobrevive a rotaciones (rememberSaveable)
     var cambiosEnSesion by rememberSaveable { mutableIntStateOf(0) }
@@ -56,9 +48,9 @@ fun ModoScreen(
         derivedStateOf { if (estaActivo) "Desactivar modo análisis" else "Activar modo análisis" }
     }
 
-    // Color animado según el estado
+    // Color animado según el estado (colores del tema: contraste AA en claro y oscuro)
     val colorAnimado by animateColorAsState(
-        targetValue = if (estaActivo) Color(0xFF4CAF50) else Color(0xFFB0BEC5),
+        targetValue = if (estaActivo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
         animationSpec = tween(durationMillis = 500),
         label = "colorModo"
     )
@@ -98,7 +90,7 @@ fun ModoScreen(
         AnimatedVisibility(visible = mostrarMensaje) {
             Text(
                 "¡Estado guardado exitosamente!",
-                color = Color(0xFF2E7D32),
+                color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.bodyLarge
             )
         }

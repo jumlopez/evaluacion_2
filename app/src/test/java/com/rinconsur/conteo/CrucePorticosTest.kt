@@ -5,6 +5,7 @@ import com.rinconsur.conteo.model.Genero
 import com.rinconsur.conteo.model.Movimiento
 import com.rinconsur.conteo.model.RegistroFlujo
 import com.rinconsur.conteo.model.calcularCruce
+import com.rinconsur.conteo.model.calcularResumen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -45,7 +46,7 @@ class CrucePorticosTest {
         )
         val porticos = listOf(portico(1, entradas = 20, salidas = 10), portico(2, entradas = 5, salidas = 0))
 
-        val cruce = calcularCruce(registros, porticos)
+        val cruce = calcularCruce(calcularResumen(registros), porticos)
 
         assertEquals(4, cruce.filas.size)
         val a1 = cruce.filas.first { it.accesoId == 1 }
@@ -64,7 +65,7 @@ class CrucePorticosTest {
 
     @Test
     fun `sin conteos de portico no hay cobertura`() {
-        val cruce = calcularCruce(emptyList(), emptyList())
+        val cruce = calcularCruce(calcularResumen(emptyList()), emptyList())
         assertFalse(cruce.hayDatosPortico)
         assertNull(cruce.coberturaEntradas)
         assertEquals(4, cruce.filas.size)
@@ -74,7 +75,7 @@ class CrucePorticosTest {
     @Test
     fun `varias lecturas del mismo acceso se suman`() {
         val cruce = calcularCruce(
-            listOf(reg(3, cantidad = 10)),
+            calcularResumen(listOf(reg(3, cantidad = 10))),
             listOf(portico(3, entradas = 6, salidas = 1), portico(3, entradas = 4, salidas = 2))
         )
         val a3 = cruce.filas.first { it.accesoId == 3 }
@@ -86,7 +87,7 @@ class CrucePorticosTest {
     @Test
     fun `la cobertura puede superar el cien por ciento`() {
         val cruce = calcularCruce(
-            listOf(reg(4, cantidad = 12)),
+            calcularResumen(listOf(reg(4, cantidad = 12))),
             listOf(portico(4, entradas = 10, salidas = 0))
         )
         assertEquals(1.2f, cruce.coberturaEntradas!!, 0.001f)
