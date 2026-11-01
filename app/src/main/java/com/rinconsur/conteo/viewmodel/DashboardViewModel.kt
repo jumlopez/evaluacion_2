@@ -9,6 +9,7 @@ import com.rinconsur.conteo.model.Periodo
 import com.rinconsur.conteo.model.ResumenGeneral
 import com.rinconsur.conteo.model.calcularCruce
 import com.rinconsur.conteo.model.calcularResumen
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 
 data class DashboardUiState(
@@ -37,7 +39,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             combine(repositorio.observar(p), repositorio.observarPorticos(p)) { registros, porticos ->
                 val resumen = calcularResumen(registros)
                 DashboardUiState(cargando = false, resumen = resumen, cruce = calcularCruce(resumen, porticos))
-            }
+            }.flowOn(Dispatchers.Default) // cálculo fuera del hilo principal
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUiState())
 
     fun cambiarPeriodo(nuevo: Periodo) { _periodo.value = nuevo }
