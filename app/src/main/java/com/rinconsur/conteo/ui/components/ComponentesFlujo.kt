@@ -4,21 +4,30 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.rinconsur.conteo.model.Accesos
 import com.rinconsur.conteo.model.CrucePorticos
@@ -29,6 +38,31 @@ import kotlin.math.roundToInt
 @Composable
 fun Cargando(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+}
+
+/** Pantalla con columna desplazable (padding 16, separación 12) y snackbar abajo al centro. */
+@Composable
+fun PantallaConSnackbar(
+    snackbar: SnackbarHostState,
+    modifier: Modifier = Modifier,
+    contenido: @Composable ColumnScope.() -> Unit
+) {
+    Box(modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = contenido
+        )
+        SnackbarHost(hostState = snackbar, modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp))
+    }
+}
+
+/** Contenido de botón: ícono de 18 dp, separación de 6 dp y texto. */
+@Composable
+fun ContenidoBoton(icono: ImageVector, texto: String) {
+    Icon(icono, contentDescription = null, modifier = Modifier.size(18.dp))
+    Spacer(Modifier.width(6.dp))
+    Text(texto)
 }
 
 @Composable

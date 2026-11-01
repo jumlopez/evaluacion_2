@@ -2,7 +2,6 @@ package com.rinconsur.conteo.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -15,8 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.Login
@@ -40,7 +37,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,8 +53,10 @@ import com.rinconsur.conteo.model.Accesos
 import com.rinconsur.conteo.model.Genero
 import com.rinconsur.conteo.model.Movimiento
 import com.rinconsur.conteo.model.RangosEtarios
+import com.rinconsur.conteo.ui.components.ContenidoBoton
 import com.rinconsur.conteo.ui.components.DatoNumerico
 import com.rinconsur.conteo.ui.components.ErrorTexto
+import com.rinconsur.conteo.ui.components.PantallaConSnackbar
 import com.rinconsur.conteo.viewmodel.RegistroViewModel
 
 private fun iconoGenero(genero: Genero): ImageVector = when (genero) {
@@ -88,156 +86,139 @@ fun RegistroScreen(
         registroViewModel.consumirMensaje()
     }
 
-    Box(modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text("Registro rápido", style = MaterialTheme.typography.titleLarge)
-            Text(
-                "Mira las cámaras y toca un botón por cada persona. Cada toque suma 1.",
-                style = MaterialTheme.typography.bodySmall
-            )
+    PantallaConSnackbar(snackbar, modifier) {
+        Text("Registro rápido", style = MaterialTheme.typography.titleLarge)
+        Text(
+            "Mira las cámaras y toca un botón por cada persona. Cada toque suma 1.",
+            style = MaterialTheme.typography.bodySmall
+        )
 
-            // Acceso
-            Text("Acceso", style = MaterialTheme.typography.titleSmall)
-            Text(
-                "Piso 1: accesos 1, 2 y 3 · Piso 2: acceso 4",
-                style = MaterialTheme.typography.bodySmall
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Accesos.ids.forEach { id ->
-                    FilterChip(
-                        selected = estado.accesoId == id,
-                        onClick = { registroViewModel.onAccesoChange(id) },
-                        label = { Text(Accesos.etiquetaCorta(id)) }
-                    )
-                }
+        // Acceso
+        Text("Acceso", style = MaterialTheme.typography.titleSmall)
+        Text(
+            "Piso 1: accesos 1, 2 y 3 · Piso 2: acceso 4",
+            style = MaterialTheme.typography.bodySmall
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Accesos.ids.forEach { id ->
+                FilterChip(
+                    selected = estado.accesoId == id,
+                    onClick = { registroViewModel.onAccesoChange(id) },
+                    label = { Text(Accesos.etiquetaCorta(id)) }
+                )
             }
-            ErrorTexto(estado.errores.acceso)
+        }
+        ErrorTexto(estado.errores.acceso)
 
-            // Entrada o salida
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Movimiento.entries.forEach { movimiento ->
-                    FilterChip(
-                        selected = estado.movimiento == movimiento,
-                        onClick = { registroViewModel.onMovimientoChange(movimiento) },
-                        label = { Text(movimiento.etiqueta) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = if (movimiento == Movimiento.ENTRADA) {
-                                    Icons.AutoMirrored.Filled.Login
-                                } else {
-                                    Icons.AutoMirrored.Filled.Logout
-                                },
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    )
-                }
-            }
-
-            // Personas por género
-            Text("Personas observadas", style = MaterialTheme.typography.titleSmall)
-            // Dos botones por fila, en el orden de Genero.entries
-            Genero.entries.chunked(2).forEach { par ->
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    par.forEach { genero ->
-                        BotonGenero(
-                            genero = genero,
-                            cantidad = estado.cantidad(genero),
-                            onAgregar = { registroViewModel.agregarPersona(genero) },
-                            onQuitar = { registroViewModel.quitarPersona(genero) },
-                            modifier = Modifier.weight(1f)
+        // Entrada o salida
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Movimiento.entries.forEach { movimiento ->
+                FilterChip(
+                    selected = estado.movimiento == movimiento,
+                    onClick = { registroViewModel.onMovimientoChange(movimiento) },
+                    label = { Text(movimiento.etiqueta) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = if (movimiento == Movimiento.ENTRADA) {
+                                Icons.AutoMirrored.Filled.Login
+                            } else {
+                                Icons.AutoMirrored.Filled.Logout
+                            },
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
-                }
+                )
             }
-            ErrorTexto(estado.errores.conteo)
-
-            // Niños acompañantes
-            TarjetaNinos(
-                ninos = estado.ninosAcompanantes,
-                onAgregar = registroViewModel::agregarNino,
-                onQuitar = registroViewModel::quitarNino
-            )
-            ErrorTexto(estado.errores.ninos)
-
-            // Rango etario
-            Text("Rango etario (opcional)", style = MaterialTheme.typography.titleSmall)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                RangosEtarios.opciones.forEach { rango ->
-                    FilterChip(
-                        selected = estado.rangoEtario == rango,
-                        onClick = { registroViewModel.onRangoChange(rango) },
-                        label = { Text(rango) }
-                    )
-                }
-            }
-            ErrorTexto(estado.errores.rango)
-
-            // Compra: solo aplica a las entradas
-            if (estado.movimiento == Movimiento.ENTRADA) {
-                Text("¿Compró? (opcional)", style = MaterialTheme.typography.titleSmall)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(
-                        Triple(true, "Sí", Icons.Filled.Check),
-                        Triple(false, "No", Icons.Filled.Close),
-                        Triple(null, "Sin dato", null)
-                    ).forEach { (valor, texto, icono) ->
-                        FilterChip(
-                            selected = estado.compro == valor,
-                            onClick = { registroViewModel.onComproChange(valor) },
-                            label = { Text(texto) },
-                            leadingIcon = icono?.let { { Icon(it, null, Modifier.size(18.dp)) } }
-                        )
-                    }
-                }
-            }
-
-            Card(Modifier.fillMaxWidth()) {
-                Row(
-                    Modifier.fillMaxWidth().padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
-                    DatoNumerico("Personas", estado.totalPersonas)
-                    DatoNumerico("Niños", estado.ninosAcompanantes)
-                    DatoNumerico("Total", estado.totalConNinos)
-                }
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(
-                    onClick = registroViewModel::reiniciarConteo,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Filled.Clear, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Limpiar")
-                }
-                Button(
-                    onClick = registroViewModel::guardar,
-                    enabled = estado.totalPersonas > 0,
-                    modifier = Modifier.weight(2f)
-                ) {
-                    Icon(Icons.Filled.Save, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Guardar ${estado.totalConNinos}")
-                }
-            }
-            Text(
-                "Se guarda un registro por género en SQLite, sin salir de la pantalla.",
-                style = MaterialTheme.typography.bodySmall
-            )
         }
 
-        SnackbarHost(
-            hostState = snackbar,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
+        // Personas por género
+        Text("Personas observadas", style = MaterialTheme.typography.titleSmall)
+        // Dos botones por fila, en el orden de Genero.entries
+        Genero.entries.chunked(2).forEach { par ->
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                par.forEach { genero ->
+                    BotonGenero(
+                        genero = genero,
+                        cantidad = estado.cantidad(genero),
+                        onAgregar = { registroViewModel.agregarPersona(genero) },
+                        onQuitar = { registroViewModel.quitarPersona(genero) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+        ErrorTexto(estado.errores.conteo)
+
+        // Niños acompañantes
+        TarjetaNinos(
+            ninos = estado.ninosAcompanantes,
+            onAgregar = registroViewModel::agregarNino,
+            onQuitar = registroViewModel::quitarNino
+        )
+        ErrorTexto(estado.errores.ninos)
+
+        // Rango etario
+        Text("Rango etario (opcional)", style = MaterialTheme.typography.titleSmall)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            RangosEtarios.opciones.forEach { rango ->
+                FilterChip(
+                    selected = estado.rangoEtario == rango,
+                    onClick = { registroViewModel.onRangoChange(rango) },
+                    label = { Text(rango) }
+                )
+            }
+        }
+        ErrorTexto(estado.errores.rango)
+
+        // Compra: solo aplica a las entradas
+        if (estado.movimiento == Movimiento.ENTRADA) {
+            Text("¿Compró? (opcional)", style = MaterialTheme.typography.titleSmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    Triple(true, "Sí", Icons.Filled.Check),
+                    Triple(false, "No", Icons.Filled.Close),
+                    Triple(null, "Sin dato", null)
+                ).forEach { (valor, texto, icono) ->
+                    FilterChip(
+                        selected = estado.compro == valor,
+                        onClick = { registroViewModel.onComproChange(valor) },
+                        label = { Text(texto) },
+                        leadingIcon = icono?.let { { Icon(it, null, Modifier.size(18.dp)) } }
+                    )
+                }
+            }
+        }
+
+        Card(Modifier.fillMaxWidth()) {
+            Row(
+                Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                DatoNumerico("Personas", estado.totalPersonas)
+                DatoNumerico("Niños", estado.ninosAcompanantes)
+                DatoNumerico("Total", estado.totalConNinos)
+            }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedButton(
+                onClick = registroViewModel::reiniciarConteo,
+                modifier = Modifier.weight(1f)
+            ) {
+                ContenidoBoton(Icons.Filled.Clear, "Limpiar")
+            }
+            Button(
+                onClick = registroViewModel::guardar,
+                enabled = estado.totalPersonas > 0,
+                modifier = Modifier.weight(2f)
+            ) {
+                ContenidoBoton(Icons.Filled.Save, "Guardar ${estado.totalConNinos}")
+            }
+        }
+        Text(
+            "Se guarda un registro por género en SQLite, sin salir de la pantalla.",
+            style = MaterialTheme.typography.bodySmall
         )
     }
 }
